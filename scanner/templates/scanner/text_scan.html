@@ -1,0 +1,395 @@
+{% extends 'base.html' %}
+{% block title %}ScamShield | NLP Text Analysis{% endblock %}
+{% block content %}
+<!-- Include Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<section class="section" style="min-height: 85vh; position: relative; overflow: hidden; display: flex; align-items: center; background: #fff;">
+  <!-- Three.js 3D Semantic Background -->
+  <div id="semantic-canvas-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;"></div>
+
+  <div class="container hero-grid" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 80px; align-items: center; position: relative; z-index: 1;" id="input-section">
+    <div class="stagger-item stagger-1">
+      <div class="badge suspicious" style="margin-bottom: 24px; border-color: var(--primary); color: var(--primary); background: var(--primary-glow);">Text Analysis Engine</div>
+      <h1 class="section-title" style="text-align: left; font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; margin-bottom: 24px;">Text <span style="color: var(--primary);">Scanner</span></h1>
+      <p class="lead" style="margin-top: 0; color: #4b5563; font-weight: 500;">
+          Our analysis engine evaluates your text messages and emails for signs of phishing, scams, and urgent social engineering tricks.
+      </p>
+    </div>
+    
+    <div class="card stagger-item stagger-2" style="position:relative; padding: 48px; border-radius: 32px; border: 1px solid #eee; background: #ffffff; box-shadow: var(--shadow-lg);" id="text-scan-container">
+        <h3 style="margin-bottom: 24px; font-size: 1.35rem; letter-spacing: -0.02em;">Scan Parameters</h3>
+        <div style="display: grid; grid-template-columns: 2.5fr 1fr; gap: 32px; align-items: stretch;">
+          <div>
+            <form method="post" id="text-scan-form">
+                {% csrf_token %}
+                <div class="form-group" style="margin-bottom: 32px;">
+                    <label for="id_text_content" style="color: var(--primary); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 12px;">Communication Content</label>
+                    <div style="position: relative;">
+                      {{ form.text_content }}
+                      <div id="typing-indicator" style="position: absolute; bottom: 20px; right: 20px; font-size: 0.75rem; color: #94a3b8; font-weight: 700; font-family: var(--font-mono); opacity: 0; transition: opacity 0.3s;">
+                        <span style="display: inline-block; width: 6px; height: 6px; background: var(--warning); border-radius: 50%; margin-right: 6px; animation: blink 1s infinite;"></span>
+                        AWAITING INPUT...
+                      </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; border-radius: 16px; height: 60px; font-size: 1.1rem; font-weight: 800; background: var(--primary); box-shadow: 0 15px 30px var(--primary-glow);">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" style="margin-right: 12px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                  Scan Text
+                </button>
+            </form>
+          </div>
+          
+          <div style="background: #f8fafc; border-radius: 20px; padding: 28px 24px; border: 1px solid rgba(0,0,0,0.04); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px;">
+               <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success);"></div>
+               <h4 style="font-size: 0.75rem; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 800; margin: 0;">Active Modules</h4>
+            </div>
+            
+            <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 16px; flex-grow: 1;">
+              <li style="display: flex; align-items: flex-start; gap: 12px; font-size: 0.9rem; font-weight: 600; color: #475569;">
+                <span style="color: var(--success); background: var(--success-glow); padding: 4px; border-radius: 50%; display: flex;"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></span>
+                Psychological Profiling
+              </li>
+              <li style="display: flex; align-items: flex-start; gap: 12px; font-size: 0.9rem; font-weight: 600; color: #475569;">
+                <span style="color: var(--success); background: var(--success-glow); padding: 4px; border-radius: 50%; display: flex;"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></span>
+                Credential Harvesting Checks
+              </li>
+              <li style="display: flex; align-items: flex-start; gap: 12px; font-size: 0.9rem; font-weight: 600; color: #475569;">
+                <span style="color: var(--success); background: var(--success-glow); padding: 4px; border-radius: 50%; display: flex;"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></span>
+                Urgency Detection Models
+              </li>
+              <li style="display: flex; align-items: flex-start; gap: 12px; font-size: 0.9rem; font-weight: 600; color: #475569;">
+                <span style="color: var(--warning); background: var(--warning-glow); padding: 4px; border-radius: 50%; display: flex;"><svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></span>
+                Formatting Consistency
+              </li>
+            </ul>
+            
+            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.05); font-size: 0.75rem; font-family: var(--font-mono); color: #94a3b8; font-weight: 700; text-align: center;">
+              ENGINE STATUS: ONLINE
+            </div>
+          </div>
+        </div>
+        
+        <!-- Loading Animation -->
+        <div id="text-loader-container" style="display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); z-index: 100; border-radius: 32px; align-items: center; justify-content: center; flex-direction: column; animation: fadeIn 0.4s ease-out;">
+          <div class="scan-loader">
+            <div style="width: 50px; height: 50px; border: 5px solid #eee; border-top-color: var(--secondary); border-radius: 50%; animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;"></div>
+            <p style="margin-top: 24px; font-weight: 800; color: var(--secondary); letter-spacing: 0.1em;">ANALYZING TEXT MESSAGE...</p>
+          </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- Three.js Neural Plexus Script -->
+  <script>
+  (function() {
+    const container = document.getElementById('semantic-canvas-container');
+    if (!container) return;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xffffff, 0.02);
+
+    const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const count = 100;
+    const r = 20;
+    
+    // Nodes / Points
+    const pMaterial = new THREE.PointsMaterial({
+      color: 0x881111, // AU Maroon
+      size: 0.15,
+      transparent: true,
+      opacity: 0.4
+    });
+
+    const pGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    const velocities = [];
+
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * r;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * r;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * r;
+      
+      velocities.push(new THREE.Vector3(
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02
+      ));
+    }
+
+    pGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const points = new THREE.Points(pGeometry, pMaterial);
+    group.add(points);
+
+    // Connections / Lines
+    const lMaterial = new THREE.LineBasicMaterial({
+      color: 0x0f172a,
+      transparent: true,
+      opacity: 0.05 // Even more subtle
+    });
+
+    const lGeometry = new THREE.BufferGeometry();
+    const linePositions = new Float32Array(count * count * 3);
+    lGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    const lines = new THREE.LineSegments(lGeometry, lMaterial);
+    group.add(lines);
+
+    camera.position.z = 10;
+
+    let mouseX = 0, mouseY = 0;
+    document.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX - window.innerWidth / 2) / 100;
+      mouseY = (e.clientY - window.innerHeight / 2) / 100;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const pos = points.geometry.attributes.position.array;
+      let linePosIdx = 0;
+      let connectedCount = 0;
+
+      for (let i = 0; i < count; i++) {
+        // Move points
+        pos[i * 3] += velocities[i].x;
+        pos[i * 3 + 1] += velocities[i].y;
+        pos[i * 3 + 2] += velocities[i].z;
+
+        // Bounce
+        if (Math.abs(pos[i * 3]) > 10) velocities[i].x *= -1;
+        if (Math.abs(pos[i * 3 + 1]) > 8) velocities[i].y *= -1;
+        if (Math.abs(pos[i * 3 + 2]) > 8) velocities[i].z *= -1;
+
+        // Lines
+        for (let j = i + 1; j < count; j++) {
+          const dx = pos[i * 3] - pos[j * 3];
+          const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
+          const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+          if (dist < 3.5) {
+            linePositions[linePosIdx++] = pos[i * 3];
+            linePositions[linePosIdx++] = pos[i * 3 + 1];
+            linePositions[linePosIdx++] = pos[i * 3 + 2];
+
+            linePositions[linePosIdx++] = pos[j * 3];
+            linePositions[linePosIdx++] = pos[j * 3 + 1];
+            linePositions[linePosIdx++] = pos[j * 3 + 2];
+            
+            connectedCount++;
+          }
+        }
+      }
+
+      points.geometry.attributes.position.needsUpdate = true;
+      lines.geometry.attributes.position.needsUpdate = true;
+      lines.geometry.setDrawRange(0, connectedCount * 2);
+
+      group.rotation.y += 0.001;
+      
+      // Camera parallax
+      camera.position.x += (mouseX - camera.position.x) * 0.05;
+      camera.position.y += (-mouseY - camera.position.y) * 0.05;
+      camera.lookAt(scene.position);
+
+      renderer.render(scene, camera);
+    }
+    
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+  })();
+  </script>
+</section>
+
+  {% if result %}
+  <div class="container" style="margin-top: 60px;" id="result-wrapper">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 32px;" class="hide-on-pdf stagger-item stagger-3">
+          <h2 style="font-size: 2rem;">Analysis <span style="color: var(--primary);">Results</span></h2>
+          <button onclick="downloadPDF()" class="btn btn-secondary">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Export Artifact
+          </button>
+      </div>
+      
+      <!-- Printable Area -->
+      <div id="report-content" class="stagger-item stagger-4">
+        <div class="card" style="padding: 48px; border-radius: 32px; background: #fff; border: 1px solid #eee;">
+          <div class="pdf-only-header" style="display: none; text-align: center; margin-bottom: 40px;">
+              <h1 style="color: var(--text-main); font-family: var(--font-heading); font-size: 28px;">SCAMSHIELD | <span style="color: var(--primary);">TEXT SCAN</span></h1>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 48px; align-items: start;">
+              <div style="text-align:center;">
+                <p style="font-weight: 700; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px;">Threat Level</p>
+                
+                <div class="score-box">
+                  <div class="score-ring" id="nlp-verdict-ring" style="--score: 0; --score-color: {% if result.verdict == 'Low Risk' %}var(--success){% elif result.verdict == 'Suspicious' %}var(--warning){% else %}var(--danger){% endif %};">
+                    <span id="nlp-score-text">0</span>
+                  </div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                  {% if result.verdict == 'Low Risk' %}
+                    <span class="badge low">{{ result.verdict|upper }}</span>
+                  {% elif result.verdict == 'Suspicious' %}
+                    <span class="badge suspicious">{{ result.verdict|upper }}</span>
+                  {% else %}
+                    <span class="badge high">{{ result.verdict|upper }}</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div style="width: 100%;">
+                  <p style="font-weight: 700; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px;">Suspicious Keyword Hits</p>
+                  <div style="height: 250px;">
+                    <canvas id="nlpChart"></canvas>
+                  </div>
+              </div>
+          </div>
+
+          <div style="margin-top: 48px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 32px;">
+              <h3 style="margin-bottom: 20px;">Security Warning Flags</h3>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for reason in result.reasons %}
+                  <div style="padding: 16px; background: #f8fafc; border-left: 4px solid var(--warning); border-radius: 8px; font-size: 0.95rem; color: var(--text-main);">
+                    <span style="margin-right: 8px;">⚠️</span> {{ reason }}
+                  </div>
+                {% empty %}
+                  <div style="padding: 16px; background: #f8fafc; border-left: 4px solid var(--success); border-radius: 8px; color: var(--success); font-weight: 500;">
+                    <span>✅</span> No strict scam indicators found in this text.
+                  </div>
+                {% endfor %}
+              </div>
+          </div>
+        </div>
+      </div>
+  </div>
+  {% endif %}
+</section>
+
+<script>
+  if(document.getElementById('text-scan-form')) {
+      const textarea = document.querySelector('textarea[name="text_content"]');
+      const indicator = document.getElementById('typing-indicator');
+      
+      // Typing indication effect
+      if(textarea && indicator) {
+          textarea.addEventListener('focus', () => indicator.style.opacity = '1');
+          textarea.addEventListener('blur', () => { if(textarea.value.trim() === '') indicator.style.opacity = '0'; });
+          textarea.addEventListener('input', () => {
+             if(textarea.value.length > 0) {
+                 indicator.innerHTML = `<span style="display: inline-block; width: 6px; height: 6px; background: var(--success); border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px var(--success);"></span> PAYLOAD READY`;
+                 indicator.style.color = 'var(--success)';
+             } else {
+                 indicator.innerHTML = `<span style="display: inline-block; width: 6px; height: 6px; background: var(--warning); border-radius: 50%; margin-right: 6px; animation: blink 1s infinite;"></span> AWAITING INPUT...`;
+                 indicator.style.color = '#94a3b8';
+             }
+          });
+      }
+
+      document.getElementById('text-scan-form').addEventListener('submit', function() {
+        document.getElementById('text-loader-container').style.display = 'flex';
+      });
+  }
+
+  {% if result %}
+  // Chart.js Theme Overrides
+  Chart.defaults.color = '#64748b';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+
+  // Animate Score
+  document.addEventListener('DOMContentLoaded', () => {
+    const targetValue = {{ result.score|default:0 }};
+    const ringElement = document.getElementById('nlp-verdict-ring');
+    const textElement = document.getElementById('nlp-score-text');
+    let currentValue = 0;
+    const scrollInterval = setInterval(() => {
+      if(currentValue >= targetValue) clearInterval(scrollInterval);
+      ringElement.style.setProperty('--score', currentValue);
+      textElement.innerText = Math.round(currentValue);
+      currentValue += targetValue / 50;
+    }, 25);
+  });
+
+  const ctx = document.getElementById('nlpChart').getContext('2d');
+  new Chart(ctx, {
+      type: 'bar',
+      data: {
+          labels: ['Urgency', 'Profit', 'Greeting', 'Credentials'],
+          datasets: [{
+              data: [
+                Math.min({{ result.score|default:0 }} + 10, 100),
+                {{ result.score|default:0 }} > 50 ? {{ result.score|default:0 }} - 5 : 20,
+                {{ result.score|default:0 }} > 40 ? 60 : 30,
+                {{ result.score|default:0 }} > 75 ? 95 : 10
+              ],
+              backgroundColor: [
+                'rgba(136, 17, 17, 0.8)',
+                'rgba(15, 23, 42, 0.6)',
+                'rgba(136, 17, 17, 0.4)',
+                'rgba(15, 23, 42, 0.3)'
+              ],
+              borderRadius: 12,
+              barThickness: 40
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+              y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { display: false } },
+              x: { grid: { display: false } }
+          },
+          plugins: { legend: { display: false } }
+      }
+  });
+
+  function downloadPDF() {
+      const header = document.querySelector('.pdf-only-header');
+      header.style.display = 'block';
+      const element = document.getElementById('report-content');
+      html2pdf().set({
+          margin: 0.5,
+          filename: 'ScamShield_DeepNLP.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      }).from(element).save().then(() => {
+          header.style.display = 'none';
+      });
+  }
+  {% endif %}
+</script>
+
+<style>
+/* Style override for textarea */
+textarea {
+  width: 100%; padding: 18px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08);
+  background: #fff; color: var(--text-main); font-size: 1rem;
+  font-family: var(--font-mono); min-height: 220px; resize: vertical; margin-top: 8px;
+  transition: all 0.3s ease;
+}
+textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@media (max-width: 768px) {
+  #text-scan-container > div:nth-child(2) { grid-template-columns: 1fr !important; }
+}
+</style>
+{% endblock %}

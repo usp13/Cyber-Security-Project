@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Malware Scan Sentinel | ScamShield Labs{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding: 120px 0 80px; position: relative; overflow: hidden; min-height: 80vh; background: #fff;">
+    <!-- Deep Radar Canvas -->
+    <div id="radar-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.1;"></div>
+
+    <div class="container" style="position: relative; z-index: 1;">
+        <div style="text-align: center; max-width: 800px; margin: 0 auto 60px;">
+            <div class="badge low stagger-item stagger-1" style="margin-bottom: 24px; padding: 10px 20px; font-weight: 800;">Secure Malware Lab</div>
+            <h1 class="stagger-item stagger-2" style="font-size: 3.5rem; letter-spacing: -0.04em; margin-bottom: 20px;">Malware <span style="color: var(--primary);">Scan Sentinel</span></h1>
+            <p class="lead stagger-item stagger-3" style="font-size: 1.25rem; color: #4b5563;">
+                Upload suspicious files for deep behavioral analysis across <strong>70+ global antivirus engines</strong>.
+            </p>
+        </div>
+
+        <div class="card stagger-item stagger-4" style="max-width: 900px; margin: 0 auto; padding: 40px; border-radius: 32px;">
+            <form method="POST" enctype="multipart/form-data" id="malware-form">
+                {% csrf_token %}
+                <div id="drop-zone" style="border: 2px dashed rgba(136, 17, 17, 0.2); border-radius: 24px; padding: 80px 40px; text-align: center; transition: all 0.3s ease; position: relative; cursor: pointer; background: #fafafa;">
+                    <div style="background: rgba(136, 17, 17, 0.05); width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: var(--primary);">
+                        <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    </div>
+                    <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px;">Drag & Drop File</h3>
+                    <p style="color: #666; font-weight: 500;">or click to browse from your device</p>
+                    <input type="file" name="file" id="file-input" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;" required>
+                </div>
+                
+                <div id="file-preview" style="display: none; margin-top: 32px; padding: 20px; background: #fff; border: 1px solid #eee; border-radius: 16px; align-items: center; gap: 16px;">
+                    <div style="color: var(--primary);">
+                        <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div style="flex: 1;">
+                        <div id="file-name" style="font-weight: 700; font-size: 1.1rem;">file_name.exe</div>
+                        <div id="file-size" style="font-size: 0.85rem; color: #888;">0 KB</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 24px; border-radius: 12px;">Initiate Deep Scan</button>
+                </div>
+            </form>
+
+            <div id="scanning-overlay" style="display: none; margin-top: 32px; text-align: center;">
+                <div class="loader-ring" style="width: 60px; height: 60px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
+                <h4 style="font-weight: 800; color: var(--secondary);">Analyzing Threat Signatures...</h4>
+                <p style="color: #888; font-size: 0.9rem;">Cross-referencing with global threat databases</p>
+            </div>
+        </div>
+
+        {% if result %}
+        <div class="stagger-item" style="max-width: 900px; margin: 40px auto 0;">
+            <div class="card" style="padding: 40px; border-radius: 32px; border-left: 8px solid {% if result.malicious %}var(--danger){% else %}var(--success){% endif %};">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px;">
+                    <div>
+                        <div class="badge {% if result.malicious %}high{% else %}low{% endif %}" style="margin-bottom: 12px;">Detection Result: {{ result.verdict|default:"Analyzed" }}</div>
+                        <h2 style="font-size: 2.2rem; font-weight: 900;">{{ result.file_name }}</h2>
+                        <code style="display: block; margin-top: 8px; font-size: 0.8rem; color: #888; background: #f8f9fa; padding: 4px 12px; border-radius: 6px;">SHA-256: {{ result.hash }}</code>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 3.5rem; font-weight: 900; color: {% if result.malicious %}var(--danger){% else %}var(--success){% endif %}; line-height: 1;">
+                            {{ result.detections }}<span style="font-size: 1.2rem; color: #888; font-weight: 600;">/{{ result.total_engines }}</span>
+                        </div>
+                        <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #888; letter-spacing: 0.1em; margin-top: 4px;">Detections Found</div>
+                    </div>
+                </div>
+
+                {% if result.message %}
+                <div style="background: rgba(99, 102, 241, 0.05); padding: 20px; border-radius: 16px; margin-bottom: 32px; border: 1px solid rgba(99, 102, 241, 0.1);">
+                    <div style="font-weight: 800; color: var(--secondary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Analysis Status
+                    </div>
+                    <p style="color: #666; font-size: 0.95rem;">{{ result.message }}</p>
+                </div>
+                {% endif %}
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div style="padding: 24px; background: #fbfbfb; border-radius: 20px; border: 1px solid #f0f0f0;">
+                        <div style="color: #888; font-size: 0.8rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 8px;">Scan Mode</div>
+                        <div style="font-weight: 800; color: var(--secondary);">{{ result.mode }}</div>
+                    </div>
+                    <div style="padding: 24px; background: #fbfbfb; border-radius: 20px; border: 1px solid #f0f0f0;">
+                        <div style="color: #888; font-size: 0.8rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 8px;">Threat Level</div>
+                        <div style="font-weight: 800; color: {% if result.malicious %}var(--danger){% else %}var(--success){% endif %};">
+                            {% if result.malicious %}High Priority Threat{% else %}Verified Secure{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    #drop-zone.active {
+        border-color: var(--primary);
+        background: rgba(136, 17, 17, 0.05);
+        transform: scale(0.99);
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+    // Drag & Drop Preview Logic
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const filePreview = document.getElementById('file-preview');
+    const fileName = document.getElementById('file-name');
+    const fileSize = document.getElementById('file-size');
+    const malwareForm = document.getElementById('malware-form');
+    const scanningOverlay = document.getElementById('scanning-overlay');
+
+    fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            fileName.innerText = file.name;
+            fileSize.innerText = (file.size / 1024).toFixed(2) + ' KB';
+            filePreview.style.display = 'flex';
+            dropZone.style.display = 'none';
+        }
+    };
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.classList.add('active');
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('active');
+        }, false);
+    });
+
+    malwareForm.onsubmit = () => {
+        scanningOverlay.style.display = 'block';
+        filePreview.style.display = 'none';
+    };
+
+    // Three.js Radar Animation
+    (function() {
+        const container = document.getElementById('radar-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(container.offsetWidth, container.offsetHeight);
+        container.appendChild(renderer.domElement);
+
+        const geometry = new THREE.BufferGeometry();
+        const vertices = [];
+        for (let i = 0; i < 5000; i++) {
+            vertices.push(THREE.MathUtils.randFloatSpread(100));
+            vertices.push(THREE.MathUtils.randFloatSpread(100));
+            vertices.push(THREE.MathUtils.randFloatSpread(100));
+        }
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        const material = new THREE.PointsMaterial({ color: 0x881111, size: 0.1, transparent: true, opacity: 0.5 });
+        const points = new THREE.Points(geometry, material);
+        scene.add(points);
+
+        camera.position.z = 50;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            points.rotation.y += 0.001;
+            points.rotation.x += 0.0005;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.offsetWidth / container.offsetHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+        });
+    })();
+</script>
+{% endblock %}

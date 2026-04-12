@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}ScamShield | Secure Channel{% endblock %}
+{% block content %}
+<section class="section" style="min-height: 80vh; display: flex; align-items: center;">
+  <div class="container hero-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;">
+    <div class="stagger-item stagger-1">
+      <div class="badge low" style="margin-bottom: 20px;">Support Infrastructure</div>
+      <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; margin-bottom: 24px;">Secure <span style="color: var(--primary);">Channel</span></h1>
+      <p class="lead" style="margin-top: 24px;">
+          Open an encrypted telemetry stream with our administration team. Report false positives, request enterprise access, or submit manual artifacts for deep inspection.
+      </p>
+    </div>
+    <div class="card stagger-item stagger-2" style="padding: 48px; position: relative; overflow: hidden;">
+      <div style="position: absolute; top:0; left:0; width:100%; height:4px; background: linear-gradient(to right, var(--primary), var(--secondary)); opacity: 0.6;"></div>
+      
+      {% if success %}
+      <div class="badge low" style="width: 100%; margin-bottom: 32px; padding: 16px; border-radius: 12px; font-weight: 600; font-size: 0.95rem;">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" style="margin-right: 10px; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Secure channel established. Payload transmitted.
+      </div>
+      {% endif %}
+
+      <form method="post" style="display: flex; flex-direction: column; gap: 24px;">
+        {% csrf_token %}
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+          <label for="name" style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Operator Identifier</label>
+          <input type="text" id="name" name="name" class="form-control" placeholder="Project Lead / Security Analyst" required style="padding: 16px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background: #fff; font-family: var(--font-mono);">
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+          <label for="email" style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Return Endpoint (Email)</label>
+          <input type="email" id="email" name="email" class="form-control" placeholder="analyst@scamshield.net" required style="padding: 16px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background: #fff; font-family: var(--font-mono);">
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+          <label for="message" style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Incident Payload (Message)</label>
+          <textarea id="message" name="message" class="form-control" placeholder="Detail the threat scenario or inquiry..." required style="padding: 16px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background: #fff; font-family: var(--font-body); min-height: 120px; resize: vertical;"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; height: 56px; border-radius: 12px; font-size: 1.1rem; margin-top: 8px;">
+          Transmit Payload
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

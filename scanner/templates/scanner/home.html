@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}ScamShield | Threat Intelligence Platform{% endblock %}
+{% block content %}
+<section class="hero"
+  style="padding-bottom: 80px; position: relative; overflow: hidden; min-height: 85vh; display: flex; align-items: center; background: #fff;">
+  <!-- Three.js 3D Canvas Container -->
+  <div id="cyber-canvas-container"
+    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.15;">
+  </div>
+
+  <div class="container hero-grid"
+    style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 80px; align-items: center; text-align: left; position: relative; z-index: 1;">
+    <div class="stagger-item stagger-1">
+      <div class="badge low"
+        style="margin-bottom: 24px; padding: 10px 20px; font-weight: 800; border: 1px solid var(--primary); background: #fff; color: var(--primary);">
+        Ahmedabad University</div>
+      <h1 style="font-size: 4.5rem; line-height: 1; margin-bottom: 24px;">Advanced <span
+          style="color: var(--primary);">Cyber Shield</span></h1>
+      <p class="lead"
+        style="font-size: 1.35rem; line-height: 1.6; margin-bottom: 40px; font-weight: 500; color: #4b5563;">
+        Advanced threat intelligence engineered at **Ahmedabad University**. Under the distinguished mentorship of
+        <strong>Prof. Kuntal Patel</strong>.
+      </p>
+
+      <div
+        style="background: #fff; border: 1px solid #eee; border-left: 5px solid var(--primary); padding: 32px; border-radius: 0 24px 24px 0; margin-bottom: 48px; box-shadow: var(--shadow-lg);">
+        <h4
+          style="margin-bottom: 12px; color: var(--primary); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.2em; font-weight: 800;">
+          Academic Mentor</h4>
+        <div style="font-size: 2rem; font-weight: 900; color: var(--secondary); letter-spacing: -0.02em;">Prof. Kuntal
+          Patel</div>
+        <div style="font-size: 1rem; color: #666; font-weight: 600; margin-top: 4px;">Lead Coordinator • CSE-212 Cyber
+          Security</div>
+      </div>
+
+      <div style="display: flex; gap: 20px;">
+        <a class="btn btn-primary" href="{% url 'scan_url' %}"
+          style="padding: 20px 40px; font-size: 1.2rem; border-radius: 50px; background: var(--primary); color: #fff;">Scan
+          a Website</a>
+        <a class="btn btn-secondary" href="{% url 'history' %}"
+          style="padding: 20px 40px; font-size: 1.2rem; border-radius: 50px; background: #fff; border: 1px solid #ddd; color: var(--secondary);">View
+          Scan History</a>
+      </div>
+    </div>
+
+    <div class="stagger-item stagger-2">
+      <div class="spotlight-wrap tilt-3d"
+        style="background: #fff; border-radius: 40px; border: 1px solid #eee; box-shadow: 0 40px 100px rgba(0,0,0,0.05); overflow: hidden;">
+        <img src="{% static 'img/au_campus.webp' %}" alt="Ahmedabad University Campus"
+          style="width: 100%; height: auto; display: block; filter: contrast(1.1) brightness(1.05); transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);">
+        <div
+          style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(255,255,255,0.4), transparent 30%); pointer-events: none;">
+        </div>
+        <div style="position: absolute; bottom: 40px; left: 40px; right: 40px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div
+              style="width: 0px; height: 12px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary);">
+            </div>
+            <span
+              style="color: var(--secondary); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.2em;"></span>
+          </div>
+          <h2 style="color: var(--secondary); margin: 0; font-size: 2.8rem; font-weight: 900; letter-spacing: -0.03em;">
+            Ahmedabad <span style="color: var(--primary);">University</span></h2>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Three.js Aesthetic Data Wave Background -->
+<script>
+  (function () {
+    const container = document.getElementById('cyber-canvas-container');
+    if (!container) return;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xffffff, 0.025); // Lighter fog so points don't wash out
+
+    const camera = new THREE.PerspectiveCamera(60, container.offsetWidth / container.offsetHeight, 1, 500);
+    camera.position.set(0, 10, 20); // Look down at the wave
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const SEPARATION = 1.5, AMOUNTX = 50, AMOUNTY = 50;
+    const numParticles = AMOUNTX * AMOUNTY;
+
+    // Geometry
+    const positions = new Float32Array(numParticles * 3);
+    const geometry = new THREE.BufferGeometry();
+
+    let i = 0;
+    for (let ix = 0; ix < AMOUNTX; ix++) {
+      for (let iy = 0; iy < AMOUNTY; iy++) {
+        positions[i] = ix * SEPARATION - ((AMOUNTX * SEPARATION) / 2);
+        positions[i + 1] = 0;
+        positions[i + 2] = iy * SEPARATION - ((AMOUNTY * SEPARATION) / 2);
+        i += 3;
+      }
+    }
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    // Custom glowing particle utilizing built in canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 16; canvas.height = 16;
+    const context = canvas.getContext('2d');
+    context.beginPath();
+    context.arc(8, 8, 8, 0, Math.PI * 2, false);
+    context.fillStyle = '#4a0000'; // Slight dark maroon
+    context.fill();
+    const texture = new THREE.CanvasTexture(canvas);
+
+    const material = new THREE.PointsMaterial({
+      color: 0x4a0000,
+      size: 0.35,
+      map: texture,
+      transparent: true,
+      opacity: 0.7,
+      alphaTest: 0.1
+    });
+
+    const particles = new THREE.Points(geometry, material);
+    particles.position.y = -5; // Move the wave downwards slightly
+    scene.add(particles);
+
+    let count = 0;
+    let mouseX = 0;
+
+    document.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX - window.innerWidth / 2) / 30;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const positions = particles.geometry.attributes.position.array;
+      let i = 0;
+      for (let ix = 0; ix < AMOUNTX; ix++) {
+        for (let iy = 0; iy < AMOUNTY; iy++) {
+          // Create the flowing sine wave topography
+          positions[i + 1] = (Math.sin((ix + count) * 0.3) * 2) + (Math.sin((iy + count) * 0.3) * 2);
+          i += 3;
+        }
+      }
+      particles.geometry.attributes.position.needsUpdate = true;
+
+      // Gentle camera sway based on mouse
+      camera.position.x += (mouseX - camera.position.x) * 0.05;
+      camera.lookAt(scene.position);
+
+      renderer.render(scene, camera);
+      count += 0.03; // Wave speed
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+  })();
+</script>
+
+<section style="padding: 120px 0; background: #fff; position: relative; z-index: 1;">
+  <div class="container">
+    <div style="text-align: center; margin-bottom: 80px;" class="stagger-item">
+      <div class="badge low" style="margin-bottom: 20px;">Security Features</div>
+      <h2 style="font-size: 3.2rem; font-weight: 900; letter-spacing: -0.04em;">Advanced <span>Cyber Analytics</span>
+      </h2>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px;">
+      <div class="card tilt-3d stagger-item stagger-1">
+        <div
+          style="width: 64px; height: 64px; background: rgba(99, 102, 241, 0.1); border-radius: 20px; display: flex; align-items: center; justify-content: center; color: var(--primary); margin-bottom: 32px; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.1);">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="32" height="32"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+            </path>
+          </svg>
+        </div>
+        <h3 style="margin-bottom: 16px; font-size: 1.6rem; font-weight: 800;">URL Security Scan</h3>
+        <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 40px; line-height: 1.7;">Perform deep
+          analysis of suspicious URLs to detect hidden threats and malicious activity.</p>
+        <a class="btn btn-secondary" href="{% url 'scan_url' %}"
+          style="width: 100%; border-radius: 12px; font-weight: 700;">Start URL Scan</a>
+      </div>
+
+      <div class="card tilt-3d stagger-item stagger-2">
+        <div
+          style="width: 64px; height: 64px; background: rgba(168, 85, 247, 0.1); border-radius: 20px; display: flex; align-items: center; justify-content: center; color: var(--secondary); margin-bottom: 32px; box-shadow: 0 10px 20px rgba(168, 85, 247, 0.1);">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="32" height="32"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+            </path>
+          </svg>
+        </div>
+        <h3 style="margin-bottom: 16px; font-size: 1.6rem; font-weight: 800;">Email & Text Scan</h3>
+        <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 40px; line-height: 1.7;">Analyze emails and
+          text for social engineering cues and phishing scams.</p>
+        <a class="btn btn-secondary" href="{% url 'scan_text' %}"
+          style="width: 100%; border-radius: 12px; font-weight: 700;">Scan Text</a>
+      </div>
+
+      <div class="card tilt-3d stagger-item stagger-3">
+        <div
+          style="width: 64px; height: 64px; background: rgba(6, 182, 212, 0.1); border-radius: 20px; display: flex; align-items: center; justify-content: center; color: var(--accent-cyan); margin-bottom: 32px; box-shadow: 0 10px 20px rgba(6, 182, 212, 0.1);">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="32" height="32"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7">
+            </path>
+          </svg>
+        </div>
+        <h3 style="margin-bottom: 16px; font-size: 1.6rem; font-weight: 800;">IP Address Checker</h3>
+        <p style="color: var(--text-muted); font-size: 1rem; margin-bottom: 40px; line-height: 1.7;">Check IP addresses
+          and verify network reputation across global security databases.</p>
+        <a class="btn btn-secondary" href="{% url 'check_ip' %}"
+          style="width: 100%; border-radius: 12px; font-weight: 700;">Check IP Address</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Development Team -->
+<section
+  style="padding: 140px 0; border-top: 1px solid rgba(0,0,0,0.05); background: #fdfdfd; position: relative; z-index: 1;">
+  <div class="container">
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 80px; align-items: center;">
+      <div class="stagger-item">
+        <div class="badge low" style="margin-bottom: 24px;">Security Team</div>
+        <h2 style="font-size: 3.5rem; line-height: 1; margin-bottom: 32px; font-weight: 900; letter-spacing: -0.05em;">
+          Development <span>Team</span></h2>
+        <p class="lead" style="font-size: 1.2rem; color: var(--text-muted); line-height: 1.8;">
+          A dedicated group of security students specialized in threat detection and defensive architecture at Ahmedabad
+          University.
+        </p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div class="card tilt-3d"
+          style="padding: 40px; background: #fff; border-radius: 28px; border: 1px solid rgba(0,0,0,0.03); box-shadow: var(--shadow-md);">
+          <div style="font-weight: 900; font-size: 1.6rem; margin-bottom: 4px; letter-spacing: -0.02em;">Tanmay Kanani
+          </div>
+          <p
+            style="color: var(--primary); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em;">
+            Architect & Dev</p>
+        </div>
+        <div class="card tilt-3d"
+          style="padding: 40px; background: #fff; border-radius: 28px; border: 1px solid rgba(0,0,0,0.03); box-shadow: var(--shadow-md);">
+          <div style="font-weight: 900; font-size: 1.6rem; margin-bottom: 4px; letter-spacing: -0.02em;">Jyotier
+            Vithlani</div>
+          <p
+            style="color: var(--primary); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em;">
+            Architect & Dev</p>
+        </div>
+        <div class="card tilt-3d"
+          style="padding: 40px; background: #fff; border-radius: 28px; border: 1px solid rgba(0,0,0,0.03); box-shadow: var(--shadow-md);">
+          <div style="font-weight: 900; font-size: 1.6rem; margin-bottom: 4px; letter-spacing: -0.02em;">Utsav Panchal
+          </div>
+          <p
+            style="color: var(--primary); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em;">
+            Architect & Dev</p>
+        </div>
+        <div class="card tilt-3d"
+          style="padding: 40px; background: #fff; border-radius: 28px; border: 1px solid rgba(0,0,0,0.03); box-shadow: var(--shadow-md);">
+          <div style="font-weight: 900; font-size: 1.6rem; margin-bottom: 4px; letter-spacing: -0.02em;">Vrunda Patel
+          </div>
+          <p
+            style="color: var(--primary); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em;">
+            Architect & Dev</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

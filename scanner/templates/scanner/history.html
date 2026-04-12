@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+{% block title %}Scan History | ScamShield{% endblock %}
+{% block content %}
+<!-- Include Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<section class="section" style="min-height: 85vh; position: relative; overflow: hidden; background: #fff; padding-top: 100px;">
+    <!-- Three.js 3D History Background -->
+    <div id="history-canvas-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.8;"></div>
+
+    <div class="container" style="position: relative; z-index: 1;" id="history-container">
+        <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px;" class="hide-on-pdf stagger-item stagger-1">
+            <div>
+              <div class="badge low" style="margin-bottom: 16px; border-color: var(--primary); color: var(--primary);">Global Scan History</div>
+              <h1 style="font-size: 3rem; margin: 0; letter-spacing: -0.04em;">Audit <span style="color: var(--primary);">Logbook</span></h1>
+            </div>
+            <div style="display:flex; gap: 16px; align-items: center;">
+                <div style="text-align: right;">
+                  <div style="font-weight: 800; color: var(--secondary); font-size: 1.2rem;">{{ scans|length }}</div>
+                  <div style="font-weight: 600; color: #999; font-size: 0.7rem; text-transform: uppercase;">Total Scans Requested</div>
+                </div>
+                <button onclick="downloadPDF()" class="btn btn-primary" style="padding: 16px 28px; font-size: 0.95rem; border-radius: 12px; font-weight: 800; background: var(--primary); box-shadow: 0 10px 20px var(--primary-glow);">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" style="margin-right: 10px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                  Export Intelligence
+                </button>
+            </div>
+        </div>
+
+    <!-- Three.js Data Stack Script -->
+    <script>
+    (function() {
+      const container = document.getElementById('history-canvas-container');
+      if (!container) return;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      const items = [];
+      const count = 25;
+      const geometry = new THREE.PlaneGeometry(5, 0.5);
+      const maroonMat = new THREE.MeshBasicMaterial({ color: 0x4a0000, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+      const slateMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+
+      for (let i = 0; i < count; i++) {
+        const material = Math.random() > 0.5 ? maroonMat : slateMat;
+        const panel = new THREE.Mesh(geometry, material);
+        
+        panel.position.set(
+          (Math.random() - 0.5) * 15,
+          (i - count/2) * 1,
+          (Math.random() - 0.5) * 5
+        );
+        panel.rotation.x = Math.PI / 2.5;
+        
+        items.push(panel);
+        scene.add(panel);
+      }
+
+      camera.position.z = 12;
+      camera.position.y = 2;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        items.forEach((p, idx) => {
+          p.position.y -= 0.01;
+          if (p.position.y < -12) p.position.y = 12;
+          p.rotation.z += 0.001;
+        });
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      window.addEventListener('resize', () => {
+        camera.aspect = container.offsetWidth / container.offsetHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.offsetWidth, container.offsetHeight);
+      });
+    })();
+    </script>
+        
+        <!-- PRINTABLE AREA -->
+        <div id="report-content" class="pdf-container">
+            
+            <div class="pdf-only-header" style="display: none; text-align: center; margin-bottom: 48px;">
+                <h1 style="color: #0f172a; font-family: var(--font-heading); font-size: 32px; letter-spacing: -0.02em;">SCAMSHIELD | <span style="color: var(--primary);">SCAN HISTORY</span></h1>
+                <p style="color: #64748b; font-size: 16px; margin-top: 8px; font-weight: 500;">Historical Activity Log & Threat Distribution Map</p>
+                <div style="height: 1px; background: #e2e8f0; margin: 32px 0;"></div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 350px 1fr; gap: 32px; align-items: start;">
+                <!-- HISTORY STATISTICS -->
+                {% if scans %}
+                <div class="card stagger-item stagger-2 pdf-panel" style="padding: 32px; height: fit-content;">
+                    <h2 style="font-size: 0.8rem; margin-bottom: 24px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700;">Threat Distribution</h2>
+                    <div style="position: relative; width: 100%;">
+                        <canvas id="historyChart"></canvas>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card stagger-item stagger-3 pdf-panel" style="padding: 0; overflow: hidden;">
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f8fafc; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                                    <th style="padding: 20px; text-align:left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">ID</th>
+                                    <th style="padding: 20px; text-align:left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">Target Artifact</th>
+                                    <th style="padding: 20px; text-align:left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">Threat Type</th>
+                                    <th style="padding: 20px; text-align:left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">Score</th>
+                                    <th style="padding: 20px; text-align:left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);">Timestamp</th>
+                                    <th style="padding: 20px; text-align:right; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted);" class="hide-on-pdf">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for scan in scans %}
+                                <tr class="table-row-hover" style="border-bottom: 1px solid rgba(0,0,0,0.03); transition: all 0.2s ease;">
+                                    <td style="padding: 20px; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.85rem;">#{{ scan.id }}</td>
+                                    <td style="padding: 20px; font-weight: 500;">
+                                        {% if scan.url %}
+                                            <span style="color: var(--primary);">{{ scan.url|truncatechars:40 }}</span>
+                                        {% elif scan.ip_address %}
+                                            <span style="color: var(--accent-emerald);">{{ scan.ip_address }}</span>
+                                        {% elif scan.file_name %}
+                                            <span style="color: var(--primary);"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>{{ scan.file_name|truncatechars:40 }}</span>
+                                        {% elif scan.target %}
+                                            <span style="color: var(--warning); font-family: var(--font-mono); font-size: 0.8rem;"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-right: 4px; vertical-align: middle;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>{{ scan.target|truncatechars:40 }}</span>
+                                        {% else %}
+                                            <span style="color: var(--secondary);">NLP Text Payload</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 20px;">
+                                        {% if scan.url %}
+                                            {% if scan.verdict == "Low Risk" or scan.verdict == "Safe" %}
+                                                <span class="badge low">{{ scan.verdict }}</span>
+                                            {% elif scan.verdict == "Suspicious" %}
+                                                <span class="badge suspicious">{{ scan.verdict }}</span>
+                                            {% elif scan.verdict %}
+                                                <span class="badge high">{{ scan.verdict }}</span>
+                                            {% else %}
+                                                <span style="color: #cbd5e1;">-</span>
+                                            {% endif %}
+                                        {% elif scan.file_name %}
+                                            {% if scan.verdict == "Clean" %}
+                                                <span class="badge low">Clean</span>
+                                            {% else %}
+                                                <span class="badge high">Infected</span>
+                                            {% endif %}
+                                        {% elif scan.target %}
+                                            <span class="badge suspicious">Network Audit</span>
+                                        {% else %}
+                                            <span style="color: #cbd5e1;">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 20px; font-family: var(--font-heading); font-weight: 700;">
+                                        {% if scan.url %}
+                                            {% if scan.score is not None %}
+                                                <span style="color: var(--text-main);">{{ scan.score }}</span><span style="color: #94a3b8; font-size: 0.8rem;">/100</span>
+                                            {% else %}
+                                                <span style="color: #cbd5e1;">-</span>
+                                            {% endif %}
+                                        {% elif scan.file_name %}
+                                            <span style="color: var(--text-main);">{{ scan.score }}</span><span style="color: #94a3b8; font-size: 0.8rem;">/{{ scan.total_engines }}</span>
+                                        {% else %}
+                                            <span style="color: #cbd5e1;">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 20px; color: var(--text-muted); font-size: 0.85rem;">{{ scan.created_at|date:"M d, Y" }}</td>
+                                    <td style="padding: 20px; text-align: right;" class="hide-on-pdf">
+                                        {% if scan.url %}
+                                            <a href="{% url 'scan_result' scan.id %}" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.75rem; border-radius: 6px;">Report</a>
+                                        {% elif scan.ip_address %}
+                                            <span class="badge low" style="padding: 4px 10px; font-size: 0.7rem; letter-spacing: 0.05em;">NETWORK</span>
+                                        {% elif scan.file_name %}
+                                            <span class="badge high" style="padding: 4px 10px; font-size: 0.7rem; letter-spacing: 0.05em; background: rgba(136, 17, 17, 0.05);">MALWARE LABS</span>
+                                        {% elif scan.target %}
+                                            <span class="badge low" style="padding: 4px 10px; font-size: 0.7rem; letter-spacing: 0.05em; background: rgba(245, 158, 11, 0.1); color: var(--warning);">RECON</span>
+                                        {% else %}
+                                            <span class="badge high" style="padding: 4px 10px; font-size: 0.7rem; letter-spacing: 0.05em; background: rgba(168, 85, 247, 0.1); color: var(--secondary);">NLP</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 80px; color: var(--text-muted); font-style: italic;">No scan records discovered for this session.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        <!-- END PRINTABLE AREA -->
+        
+    </div>
+</section>
+
+<style>
+  .table-row-hover:hover { background: #f1f5f9; }
+  .hide-on-pdf { display: flex; }
+  /* PDF Print Overrides */
+  .pdf-render-active { background: #fff !important; padding: 40px !important; color: #0f172a !important; }
+  .pdf-render-active .hide-on-pdf { display: none !important; }
+  .pdf-render-active .pdf-panel { background: #fff !important; border: 1px solid #e2e8f0 !important; box-shadow: none !important; }
+</style>
+
+<script>
+  {% if scans %}
+  document.addEventListener('DOMContentLoaded', function() {
+      // Setup Chart.js global defaults for light theme
+      Chart.defaults.color = '#64748b';
+      Chart.defaults.font.family = "'Inter', sans-serif";
+      Chart.defaults.font.weight = '600';
+
+      // Parse Django context to calculate pie chart
+      let safeCount = 0;
+      let susCount = 0;
+      let highCount = 0;
+      let otherCount = 0;
+
+      {% for scan in scans %}
+          {% if scan.url %}
+              {% if scan.verdict == "Low Risk" or scan.verdict == "Safe" %}
+                  safeCount++;
+              {% elif scan.verdict == "Suspicious" %}
+                  susCount++;
+              {% elif scan.verdict == "High Risk" or scan.verdict == "Malicious" %}
+                  highCount++;
+              {% else %}
+                  otherCount++;
+              {% endif %}
+          {% elif scan.file_name %}
+              {% if scan.verdict == "Infected" %}
+                  highCount++;
+              {% else %}
+                  safeCount++;
+              {% endif %}
+          {% elif scan.target %}
+              susCount++;
+          {% else %}
+              otherCount++;
+          {% endif %}
+      {% endfor %}
+
+      const ctx = document.getElementById('historyChart').getContext('2d');
+      new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+              labels: ['Safe', 'Suspicious', 'Malicious', 'Other'],
+              datasets: [{
+                  data: [safeCount, susCount, highCount, otherCount],
+                  backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#6366f1'],
+                  borderWidth: 0,
+                  hoverOffset: 4
+              }]
+          },
+          options: {
+              cutout: '75%',
+              plugins: {
+                  legend: { 
+                      position: 'bottom',
+                      labels: { padding: 24, usePointStyle: true, pointStyle: 'circle' } 
+                  }
+              }
+          }
+      });
+  });
+
+  // PDF Export Logic
+  function downloadPDF() {
+      const header = document.querySelector('.pdf-only-header');
+      header.style.display = 'block';
+
+      const element = document.getElementById('report-content');
+      element.classList.add('pdf-render-active');
+      
+      const opt = {
+          margin:       0.4,
+          filename:     'ScamShield_Audit_Log.pdf',
+          image:        { type: 'jpeg', quality: 1.0 },
+          html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      const btn = document.querySelector('button[onclick="downloadPDF()"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = 'Generating Record...';
+
+      html2pdf().set(opt).from(element).save().then(() => {
+          header.style.display = 'none';
+          element.classList.remove('pdf-render-active');
+          btn.innerHTML = originalText;
+      });
+  }
+  {% endif %}
+</script>
+{% endblock %}

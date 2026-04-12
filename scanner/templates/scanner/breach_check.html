@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}Identity Breach Sentinel | ScamShield{% endblock %}
+
+{% block content %}
+<section class="section" style="min-height: 85vh; position: relative; overflow: hidden; display: flex; align-items: center; background: #fff;">
+  <!-- Three.js 3D Neural Background (Slight Light theme) -->
+  <div id="breach-canvas-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.4;"></div>
+
+  <div class="container" style="position: relative; z-index: 1;">
+    <div class="hero-grid" style="align-items: center; gap: 80px;">
+      
+      <!-- Left Side: Header -->
+      <div class="stagger-item stagger-1">
+        <div class="badge suspicious" style="margin-bottom: 24px; border-color: var(--secondary); color: var(--secondary);">Identity Protection Hub</div>
+        <h1 class="section-title" style="text-align: left; font-size: clamp(2.5rem, 5vw, 3.5rem); line-height: 1.1; margin-bottom: 24px;">Identity <br><span>Breach Sentinel</span></h1>
+        <p class="lead" style="margin-top: 0; color: #4b5563; font-weight: 500; max-width: 500px;">
+          Detect if your personal data has been compromised in global data leaks. We scan billions of records to keep your digital identity secure.
+        </p>
+        
+        <div style="margin-top: 40px; display: grid; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary);"></div>
+                <span style="font-weight: 700; color: var(--text-main); font-size: 0.9rem;">Real-time Breach Database Matching</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="width: 10px; height: 10px; border-radius: 50%; background: var(--secondary);"></div>
+                <span style="font-weight: 700; color: var(--text-main); font-size: 0.9rem;">Zero-Persistence Query Engine</span>
+            </div>
+        </div>
+      </div>
+
+      <!-- Right Side: Interaction Area -->
+      <div class="card stagger-item stagger-2" style="padding: 48px; border-radius: 32px; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border: 1px solid rgba(0,0,0,0.05); position: relative; overflow: hidden;">
+        
+        {% if not result %}
+        <!-- SEARCH STATE -->
+        <form method="post" id="breach-form">
+          {% csrf_token %}
+          <div style="margin-bottom: 32px;">
+            <label for="email" style="color: var(--primary); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 12px;">Electronic Mail Address</label>
+            <input type="email" id="email" name="email" class="input-control" placeholder="user@example.com" required 
+                   style="border-radius: 16px; padding: 22px; border: 2px solid #eee; width: 100%; font-size: 1.1rem; transition: all 0.3s;">
+          </div>
+          
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 22px; font-size: 1.2rem; border-radius: 16px; font-weight: 800; background: var(--secondary); box-shadow: 0 15px 30px rgba(15, 23, 42, 0.2);">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" style="margin-right: 12px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            Initiate Identity Audit
+          </button>
+          
+          <p style="text-align: center; margin-top: 24px; font-size: 0.85rem; color: #94a3b8; font-weight: 600;">
+            We do not store your email. All queries are ephemeral.
+          </p>
+        </form>
+
+        <div id="breach-loader" style="display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0;">
+            <div class="cyber-scan-ring" style="width: 80px; height: 80px;"></div>
+            <p style="margin-top: 24px; font-weight: 700; color: var(--text-main); letter-spacing: 0.1em;">SEARCHING GLOBAL DATABASES...</p>
+        </div>
+        {% else %}
+        
+        <!-- RESULTS STATE -->
+        <div class="page-enter">
+            {% if result.breached %}
+            <div style="text-align: center; margin-bottom: 32px;">
+                <div style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+                    <svg style="width: 40px; height: 40px; color: var(--danger);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h2 style="font-size: 1.8rem; margin: 0; color: var(--danger);">Data Compromise Detected</h2>
+                <p style="color: var(--text-muted); margin-top: 8px;">Your email <strong>{{ email_queried }}</strong> was found in <strong>{{ result.breaches|length }}</strong> known breaches.</p>
+            </div>
+
+            <div style="max-height: 250px; overflow-y: auto; padding-right: 10px; margin-bottom: 32px;" class="custom-scrollbar">
+                {% for breach in result.breaches %}
+                <div style="padding: 16px; background: #f8fafc; border-radius: 12px; border-left: 4px solid var(--danger); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 700; color: var(--text-main);">{{ breach }}</span>
+                    <span class="badge high" style="font-size: 0.7rem;">EXPOSED</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- PRECAUTIONS HUB -->
+            <div style="background: rgba(15, 23, 42, 0.03); border-radius: 20px; padding: 24px; border: 1px solid rgba(15, 23, 42, 0.05);">
+                <h3 style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--secondary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    Security Recovery Plan
+                </h3>
+                <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 16px;">
+                    <li style="display: flex; gap: 12px; font-size: 0.9rem;">
+                        <span style="color: var(--danger); font-weight: 900;">01.</span>
+                        <span style="color: var(--text-muted);"><strong style="color: var(--text-main);">Rotate Passwords:</strong> Change the password for this email and any site where you used a similar one.</span>
+                    </li>
+                    <li style="display: flex; gap: 12px; font-size: 0.9rem;">
+                        <span style="color: var(--danger); font-weight: 900;">02.</span>
+                        <span style="color: var(--text-muted);"><strong style="color: var(--text-main);">Enable MFA:</strong> Activate Multi-Factor Authentication (2FA) on all financial and social accounts.</span>
+                    </li>
+                    <li style="display: flex; gap: 12px; font-size: 0.9rem;">
+                        <span style="color: var(--danger); font-weight: 900;">03.</span>
+                        <span style="color: var(--text-muted);"><strong style="color: var(--text-main);">Update Secret Questions:</strong> Reset hint questions as their answers may have been part of the leak.</span>
+                    </li>
+                </ul>
+            </div>
+            
+            {% else %}
+            <!-- SAFE STATE -->
+            <div style="text-align: center; padding: 40px 0;">
+                <div style="width: 100px; height: 100px; background: rgba(16, 185, 129, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; animation: pulse-green 2s infinite;">
+                    <svg style="width: 50px; height: 50px; color: var(--success);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h2 style="font-size: 2rem; margin: 0; color: var(--success);">Identity Secure</h2>
+                <p style="color: var(--text-muted); margin-top: 12px; line-height: 1.6;">No data breaches were found for <strong style="color: var(--text-main);">{{ email_queried }}</strong> in our global threat directory. Your digital footprint appears resilient.</p>
+                <div style="margin-top: 40px; padding: 20px; background: #f8fafc; border-radius: 16px; border: 1px solid rgba(0,0,0,0.03);">
+                    <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <svg style="width: 16px; height: 16px; color: var(--success);" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zM10 16a6 6 0 100-12 6 6 0 000 12z"></path></svg>
+                        Last Verified: Just Now
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <a href="{% url 'check_breach' %}" class="btn btn-secondary" style="width: 100%; margin-top: 32px; padding: 18px; border-radius: 14px;">Verify Another Identity</a>
+        </div>
+        {% endif %}
+
+      </div>
+
+    </div>
+  </div>
+
+  <style>
+    .cyber-scan-ring {
+      width: 80px; height: 80px;
+      border: 3px solid rgba(136, 17, 17, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s cubic-bezier(0.6, 0.1, 0.4, 0.9) infinite;
+      position: relative;
+    }
+    .cyber-scan-ring::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 3px solid rgba(15, 23, 42, 0.1);
+      border-bottom-color: #0f172a;
+      border-radius: 50%;
+      animation: spin-reverse 1.5s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
+    @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+  </style>
+
+  <!-- Three.js Neural Net Script (Slight Dark theme) -->
+  <script>
+  (function() {
+    const container = document.getElementById('breach-canvas-container');
+    if (!container) return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const count = 100;
+    const r = 20;
+    const positions = new Float32Array(count * 3);
+    const velocities = [];
+
+    for (let i = 0; i < count; i++) {
+      positions[i*3] = (Math.random() - 0.5) * r;
+      positions[i*3+1] = (Math.random() - 0.5) * r;
+      positions[i*3+2] = (Math.random() - 0.5) * r;
+      velocities.push(new THREE.Vector3((Math.random()-0.5)*0.015, (Math.random()-0.5)*0.015, (Math.random()-0.5)*0.015));
+    }
+
+    const pGeom = new THREE.BufferGeometry();
+    pGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const pMat = new THREE.PointsMaterial({ color: 0x881111, size: 0.12, transparent: true, opacity: 0.4 });
+    const points = new THREE.Points(pGeom, pMat);
+    group.add(points);
+
+    const lMat = new THREE.LineBasicMaterial({ color: 0x0f172a, transparent: true, opacity: 0.1 });
+    const lGeom = new THREE.BufferGeometry();
+    const linePos = new Float32Array(count * count * 3);
+    lGeom.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
+    const lines = new THREE.LineSegments(lGeom, lMat);
+    group.add(lines);
+
+    camera.position.z = 12;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const pos = pGeom.attributes.position.array;
+      for (let i = 0; i < count; i++) {
+        pos[i*3] += velocities[i].x;
+        pos[i*3+1] += velocities[i].y;
+        pos[i*3+2] += velocities[i].z;
+        if (Math.abs(pos[i*3]) > r/2) velocities[i].x *= -1;
+        if (Math.abs(pos[i*3+1]) > r/2) velocities[i].y *= -1;
+      }
+      pGeom.attributes.position.needsUpdate = true;
+
+      let v = 0;
+      for (let i = 0; i < count; i++) {
+        for (let j = i + 1; j < count; j++) {
+          const dx = pos[i*3] - pos[j*3];
+          const dy = pos[i*3+1] - pos[j*3+1];
+          const dist = dx*dx + dy*dy;
+          if (dist < 8) {
+            linePos[v++] = pos[i*3]; linePos[v++] = pos[i*3+1]; linePos[v++] = pos[i*3+2];
+            linePos[v++] = pos[j*3]; linePos[v++] = pos[j*3+1]; linePos[v++] = pos[j*3+2];
+          }
+        }
+      }
+      lGeom.setDrawRange(0, v/3);
+      lGeom.attributes.position.needsUpdate = true;
+      group.rotation.y += 0.001;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+  })();
+
+  document.getElementById('breach-form')?.addEventListener('submit', function() {
+    this.style.display = 'none';
+    document.getElementById('breach-loader').style.display = 'flex';
+  });
+  </script>
+</section>
+{% endblock %}

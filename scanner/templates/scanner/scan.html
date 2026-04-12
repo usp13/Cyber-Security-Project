@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Scan Suspicious Link | ScamShield{% endblock %}
+{% block content %}
+<section class="section" style="min-height: 85vh; position: relative; overflow: hidden; display: flex; align-items: center; background: #fff;">
+  <!-- Three.js 3D Neural Background -->
+  <div id="neural-canvas-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.8;"></div>
+
+  <div class="container hero-grid" style="align-items: center; position: relative; z-index: 1;">
+    <div class="stagger-item stagger-1">
+      <div class="badge low" style="margin-bottom: 24px; border-color: var(--primary); color: var(--primary);">URL Security Scan</div>
+      <h1 class="section-title" style="text-align: left; font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; margin-bottom: 24px;">Secure <span>URL Scan</span></h1>
+      <p class="lead" style="margin-top: 0; color: #4b5563; font-weight: 500;">
+          Our threat detection engine analyzes URLs for hidden malicious behavior, deceptive web pages, and known bad domains.
+      </p>
+    </div>
+    
+    <div class="card form-card stagger-item stagger-2" id="scan-form-container" style="margin: 0; padding: 48px; position: relative; border-radius: 32px; border: 1px solid #eee; background: rgba(255,255,255,0.8); backdrop-filter: blur(20px);">
+        <form method="post" id="scan-form">
+            {% csrf_token %}
+            <div class="form-group" style="margin-bottom: 32px;">
+                <label for="url" style="color: var(--primary); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 12px;">Endpoint URL</label>
+                <input type="text" id="url" name="url" class="input-control" placeholder="https://security-telemetry.io/..." required style="border-radius: 12px; padding: 20px; border: 2px solid #eee;">
+            </div>
+            
+            <div style="display: grid; gap: 12px; margin-bottom: 40px;">
+              <p class="muted" style="margin: 0; font-size: 0.85rem; font-weight: 600; color: #999;">Investigation Presets:</p>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <span class="badge low" style="cursor: pointer; font-size: 0.75rem; transition: all 0.3s;" onclick="document.getElementById('url').value='https://ahmedabad.edu.in'">AU Campus</span>
+                <span class="badge suspicious" style="cursor: pointer; font-size: 0.75rem; transition: all 0.3s;" onclick="document.getElementById('url').value='secure-bank-login.net'">Phish Simulation</span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 22px; font-size: 1.2rem; border-radius: 16px; font-weight: 800; background: var(--primary); box-shadow: 0 15px 30px var(--primary-glow);">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" style="margin-right: 10px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              Scan Website
+            </button>
+        </form>
+        
+        <!-- Loading Animation -->
+        <div id="scan-loader-container" style="display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); z-index: 100; border-radius: 32px; align-items: center; justify-content: center; flex-direction: column; animation: fadeIn 0.4s ease-out;">
+          <style>
+            .cyber-scan-ring {
+              width: 80px; height: 80px;
+              border: 3px solid rgba(136, 17, 17, 0.1);
+              border-radius: 50%;
+              border-top-color: var(--primary);
+              animation: spin 1s cubic-bezier(0.6, 0.1, 0.4, 0.9) infinite;
+              margin-bottom: 24px;
+              box-shadow: 0 0 20px rgba(136, 17, 17, 0.2);
+            }
+            .cyber-scan-ring::after {
+              content: '';
+              position: absolute;
+              inset: 6px;
+              border: 3px solid rgba(15, 23, 42, 0.1);
+              border-bottom-color: #0f172a;
+              border-radius: 50%;
+              animation: spin-reverse 1.5s linear infinite;
+            }
+            @keyframes spin { 100% { transform: rotate(360deg); } }
+            @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
+            
+            .cyber-text-sequence span {
+              display: none;
+              font-family: var(--font-mono, monospace);
+              font-size: 0.85rem;
+              letter-spacing: 0.15em;
+              color: var(--text-main);
+              font-weight: 700;
+              text-transform: uppercase;
+            }
+            .cyber-text-sequence span.active {
+              display: block;
+              animation: pulse-op 1s infinite alternate;
+            }
+            @keyframes pulse-op {
+              0% { opacity: 0.5; }
+              100% { opacity: 1; text-shadow: 0 0 10px rgba(136, 17, 17, 0.3); }
+            }
+          </style>
+          <div class="cyber-scan-ring" style="position: relative;"></div>
+          <div class="cyber-text-sequence" id="scan-sequence-text">
+            <span class="active">Initializing Security Scan...</span>
+            <span>Checking Domain Blocks...</span>
+            <span>Inspecting Web Server...</span>
+            <span>Matching Global Threat Databases...</span>
+            <span>Finalizing Security Score...</span>
+          </div>
+          
+          <script>
+            function startCyberSequence() {
+                let currentSeq = 0;
+                const seqElements = document.querySelectorAll('#scan-sequence-text span');
+                if(seqElements.length === 0) return;
+                
+                seqElements.forEach(el => el.classList.remove('active'));
+                seqElements[0].classList.add('active');
+                
+                const seqInterval = setInterval(() => {
+                    seqElements[currentSeq].classList.remove('active');
+                    currentSeq++;
+                    
+                    if(currentSeq >= seqElements.length) {
+                        currentSeq = seqElements.length - 1;
+                        clearInterval(seqInterval);
+                    }
+                    seqElements[currentSeq].classList.add('active');
+                }, 1200);
+            }
+          </script>
+        </div>
+    </div>
+  </div>
+
+  <!-- Three.js Neural Net Script -->
+  <script>
+  (function() {
+    const container = document.getElementById('neural-canvas-container');
+    if (!container) return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    // Create Neural Nodes
+    const nodesCount = 60;
+    const positions = new Float32Array(nodesCount * 3);
+    const velocities = [];
+    
+    for (let i = 0; i < nodesCount; i++) {
+      positions[i*3] = (Math.random() - 0.5) * 15;
+      positions[i*3+1] = (Math.random() - 0.5) * 10;
+      positions[i*3+2] = (Math.random() - 0.5) * 5;
+      velocities.push({
+        x: (Math.random() - 0.5) * 0.01,
+        y: (Math.random() - 0.5) * 0.01,
+        z: (Math.random() - 0.5) * 0.01
+      });
+    }
+
+    const nodesGeom = new THREE.BufferGeometry();
+    nodesGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const nodesMat = new THREE.PointsMaterial({ size: 0.15, color: 0x4a0000, transparent: true, opacity: 0.7 });
+    const nodes = new THREE.Points(nodesGeom, nodesMat);
+    scene.add(nodes);
+
+    // Lines Connecting Nodes Optimized Pre-allocation
+    const MAX_LINES = (nodesCount * (nodesCount - 1)) / 2;
+    const linePositions = new Float32Array(MAX_LINES * 6);
+    const lineGeom = new THREE.BufferGeometry();
+    lineGeom.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x4a0000, transparent: true, opacity: 0.25 });
+    const lines = new THREE.LineSegments(lineGeom, lineMat);
+    scene.add(lines);
+
+    camera.position.z = 8;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const pos = nodesGeom.attributes.position.array;
+      for (let i = 0; i < nodesCount; i++) {
+        pos[i*3] += velocities[i].x;
+        pos[i*3+1] += velocities[i].y;
+        pos[i*3+2] += velocities[i].z;
+        
+        if (Math.abs(pos[i*3]) > 10) velocities[i].x *= -1;
+        if (Math.abs(pos[i*3+1]) > 8) velocities[i].y *= -1;
+      }
+      nodesGeom.attributes.position.needsUpdate = true;
+
+      // Redraw lines efficiently
+      let vertexpos = 0;
+      for (let i = 0; i < nodesCount; i++) {
+        for (let j = i + 1; j < nodesCount; j++) {
+          const dx = pos[i*3] - pos[j*3];
+          const dy = pos[i*3+1] - pos[j*3+1];
+          const distSq = dx*dx + dy*dy;
+          if (distSq < 9) {
+            linePositions[vertexpos++] = pos[i*3];
+            linePositions[vertexpos++] = pos[i*3+1];
+            linePositions[vertexpos++] = pos[i*3+2];
+            linePositions[vertexpos++] = pos[j*3];
+            linePositions[vertexpos++] = pos[j*3+1];
+            linePositions[vertexpos++] = pos[j*3+2];
+          }
+        }
+      }
+      lineGeom.setDrawRange(0, vertexpos / 3);
+      lineGeom.attributes.position.needsUpdate = true;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+  })();
+  </script>
+</section>
+
+<script>
+  document.getElementById('scan-form').addEventListener('submit', function() {
+    document.getElementById('scan-loader-container').style.display = 'flex';
+    if(typeof startCyberSequence === 'function') startCyberSequence();
+  });
+</script>
+{% endblock %}

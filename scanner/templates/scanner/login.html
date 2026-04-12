@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}ScamShield | Secure Authentication{% endblock %}
+{% block content %}
+<section class="section" style="min-height: 80vh; display: flex; align-items: center;">
+  <div class="container hero-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;">
+    <div class="stagger-item stagger-1">
+      <div class="badge low" style="margin-bottom: 20px;">Identity Protection</div>
+      <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; margin-bottom: 24px;">Secure <span style="color: var(--primary);">Access</span></h1>
+      <p class="lead" style="margin-top: 24px;">
+        Log in to access our threat intelligence engine. Analyze suspicious links, reverse lookup IP addresses, and monitor security risks seamlessly.
+      </p>
+    </div>
+    <div class="card stagger-item stagger-2" style="padding: 48px; position: relative; overflow: hidden;">
+      <div style="position: absolute; top:0; left:0; width:100%; height:4px; background: linear-gradient(to right, var(--primary), var(--secondary)); opacity: 0.6;"></div>
+      <h2 style="margin-bottom: 32px; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em;">Account Login</h2>
+      
+      <form method="post" id="auth-form" style="display: flex; flex-direction: column; gap: 24px;">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary" style="width: 100%; height: 56px; border-radius: 12px; font-size: 1.1rem; margin-top: 8px;">
+          Authenticate Identity
+        </button>
+      </form>
+      
+      <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.05);">
+        <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">
+          No active clearance? <a href="{% url 'register' %}" style="color: var(--primary); font-weight: 700; text-decoration: none;">Request Access</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Form styling to handle Django's auto-generated as_p */
+  #auth-form p { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  #auth-form label { 
+    color: var(--text-muted); 
+    font-size: 0.8rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.1em; 
+    font-weight: 700;
+  }
+  #auth-form input { 
+    width: 100%; 
+    padding: 18px; 
+    border-radius: 12px; 
+    border: 1px solid rgba(0,0,0,0.08); 
+    background: #fff; 
+    color: var(--text-main); 
+    font-size: 1rem; 
+    font-family: var(--font-mono); 
+    outline: none; 
+    transition: all 0.3s ease; 
+  }
+  #auth-form input:focus { 
+    border-color: var(--primary); 
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); 
+  }
+</style>
+{% endblock %}

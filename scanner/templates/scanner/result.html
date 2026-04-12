@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+{% load scanner_extras %}
+{% block title %}ScamShield | Deep Analysis Report{% endblock %}
+{% block content %}
+<!-- Include Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<section class="section">
+  <div class="container">
+    <div style="position: relative; overflow: hidden; padding: 60px 40px; background: #fff; border-radius: 32px; border: 1px solid #eee; margin-bottom: 32px; box-shadow: var(--shadow-md);" class="hide-on-pdf stagger-item stagger-1">
+      <!-- Three.js 3D Result Shield -->
+      <div id="result-shield-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.12;"></div>
+      
+      <div style="position: relative; z-index: 1;">
+        <div class="badge low" style="margin-bottom: 12px; border-color: var(--primary); color: var(--primary);">Security Scan Completed</div>
+        <h2 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; line-height: 1.1; margin: 0; letter-spacing: -0.03em;">Risk Score: <span style="color: var(--{{ risk_class }});">{{ report.risk_score }}/100</span></h2>
+        <p style="color: var(--text-muted); font-weight: 500; font-size: 1.1rem; margin-top: 4px;">Scan results processed by ScamShield detection engine</p>
+      </div>
+
+      <script>
+        (function() {
+          const container = document.getElementById('result-shield-container');
+          if (!container) return;
+          
+          // Get threat level from the page context
+          const verdict = "{% if report.verdict == 'Low Risk' %}low{% elif report.verdict == 'Suspicious' %}medium{% else %}high{% endif %}";
+          const shieldColor = verdict === 'high' ? 0xef4444 : (verdict === 'medium' ? 0xf59e0b : 0x881111);
+
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+          const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+          renderer.setSize(container.offsetWidth, container.offsetHeight);
+          renderer.setPixelRatio(window.devicePixelRatio);
+          container.appendChild(renderer.domElement);
+
+          // Create Shield Geometry (Modified Octahedron)
+          const geometry = new THREE.OctahedronGeometry(4, 2);
+          const wireframe = new THREE.WireframeGeometry(geometry);
+          const material = new THREE.LineBasicMaterial({ 
+            color: shieldColor, 
+            transparent: true, 
+            opacity: 0.3,
+            blending: THREE.AdditiveBlending 
+          });
+          const shield = new THREE.LineSegments(wireframe, material);
+          scene.add(shield);
+
+          // Internal Pulse Core
+          const coreGeom = new THREE.SphereGeometry(2.5, 32, 32);
+          const coreMat = new THREE.MeshBasicMaterial({
+            color: shieldColor,
+            transparent: true,
+            opacity: 0.04
+          });
+          const core = new THREE.Mesh(coreGeom, coreMat);
+          scene.add(core);
+
+          camera.position.z = 8;
+
+          let clock = new THREE.Clock();
+          function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+            
+            shield.rotation.y += 0.003;
+            shield.rotation.x += 0.001;
+            shield.scale.setScalar(1 + Math.sin(time * 1.5) * 0.03);
+            
+            core.scale.setScalar(1 + Math.sin(time * 1.5) * 0.08);
+            renderer.render(scene, camera);
+          }
+          animate();
+
+          window.addEventListener('resize', () => {
+            camera.aspect = container.offsetWidth / container.offsetHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+          });
+        })();
+      </script>
+    </div>
+    
+    <!-- Printable Area -->
+    <div id="report-content" class="pdf-container">
+      
+      <!-- PDF Header (Hidden normally) -->
+      <div class="pdf-only-header" style="display: none; text-align: center; margin-bottom: 40px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
+        <h1 style="color: var(--text-main); font-family: var(--font-heading); font-size: 32px; letter-spacing: -0.02em;">SCAMSHIELD <span style="color: var(--primary);">SCAN RESULTS</span></h1>
+        <p style="color: var(--text-muted); font-size: 14px; margin-top: 8px;">Analysis Fingerprint: {{ report.technical_fingerprint.generated_at }}</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 32px;">
+        <div style="display: flex; flex-direction: column; gap: 32px;">
+          <!-- SCORE PANEL -->
+          <div class="card stagger-item stagger-1" style="text-align:center; padding: 48px 32px;">
+            <p style="font-weight: 700; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 32px;">Probability Engine Verdict</p>
+            
+            <div class="score-box">
+              <div class="score-ring" id="verdict-ring" style="--score: 0; --score-color: {% if report.verdict == 'Low Risk' %}var(--success){% elif report.verdict == 'Suspicious' %}var(--warning){% else %}var(--danger){% endif %};">
+                <span id="score-text">0</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 32px;">
+              {% if report.verdict == 'Low Risk' %}
+                <span class="badge low" style="font-size: 1rem; padding: 10px 24px;">{{ report.verdict|upper }}</span>
+              {% elif report.verdict == 'Suspicious' %}
+                <span class="badge suspicious" style="font-size: 1rem; padding: 10px 24px;">{{ report.verdict|upper }}</span>
+              {% else %}
+                <span class="badge high" style="font-size: 1rem; padding: 10px 24px;">{{ report.verdict|upper }}</span>
+              {% endif %}
+            </div>
+            
+            <p style="margin-top: 24px; font-size: 0.9rem; color: var(--text-muted);">Score indicates how risky this URL is based on multiple security factors.</p>
+          </div>
+
+          <!-- SUMMARY PANEL -->
+          <div class="card stagger-item stagger-2">
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+              <svg style="width:20px; height:20px; color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Execution Summary
+            </h3>
+            <p style="color: var(--text-muted); line-height: 1.8; font-size: 0.95rem;">{{ report.summary }}</p>
+          </div>
+
+          <!-- AI PANEL -->
+          <div class="card stagger-item stagger-3" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(168, 85, 247, 0.03)); border: 1px solid rgba(99, 102, 241, 0.1); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.05);">
+            <h3 style="color: var(--primary); display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+              <svg style="width:20px; height:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              AI Analysis & Insights
+            </h3>
+            <p style="color: var(--text-main); line-height: 1.8; font-size: 0.95rem; font-weight: 400;">{{ report.ai_summary }}</p>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 32px;">
+          <!-- TARGET OVERVIEW -->
+          <div class="card stagger-item stagger-2">
+            <h3 style="margin-bottom: 24px;">Target Specifications</h3>
+            <div style="display: grid; gap: 20px;">
+              <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.02);">
+                <small style="display: block; color: var(--text-muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 6px;">Resource Identified</small>
+                <code style="word-break: break-all; color: var(--primary); font-family: var(--font-mono);">{{ report.original_url }}</code>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.02);">
+                  <small style="display: block; color: var(--text-muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 6px;">TLD Signature</small>
+                  <span style="font-weight: 700; font-family: var(--font-heading);">{{ report.domain_profile.top_level_domain|default:'-'|upper }}</span>
+                </div>
+                <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.02);">
+                  <small style="display: block; color: var(--text-muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 6px;">Protocol</small>
+                  <span style="font-weight: 700; font-family: var(--font-heading); color: var(--success);">{{ report.parsed.scheme|default:'-'|upper }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CHARTS -->
+          <div class="card stagger-item stagger-3">
+            <h3 style="margin-bottom: 24px;">Risk Breakdown</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center;">
+              <div style="position: relative; width: 100%;">
+                <p style="font-size: 0.8rem; text-align: center; color: var(--text-muted); margin-bottom: 12px;">Threat Surface Mapping</p>
+                <canvas id="riskChart"></canvas>
+              </div>
+              <div style="position: relative; width: 100%;">
+                <p style="font-size: 0.8rem; text-align: center; color: var(--text-muted); margin-bottom: 12px;">Flag Ratio Analysis</p>
+                <canvas id="ratioChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- FLAG CONTEXT -->
+          <div class="card stagger-item stagger-4">
+            <h3 style="color: var(--danger); margin-bottom: 20px;">Anomalous Observations</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              {% for reason in report.reasons %}
+                <div style="padding: 14px; background: rgba(239, 68, 68, 0.03); border-left: 3px solid var(--danger); border-radius: 4px; font-size: 0.95rem;">
+                  {{ reason }}
+                </div>
+              {% empty %}
+                <div style="padding: 14px; background: rgba(16, 185, 129, 0.03); border-left: 3px solid var(--success); border-radius: 4px; font-size: 0.95rem; color: var(--success);">
+                  No immediate threat markers were detected in the primary heuristic scan.
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div>
+      
+      <!-- VISUAL SANDBOX (SAFE PREVIEW) -->
+      {% if report.screenshot_url %}
+      <div class="card stagger-item stagger-4" style="margin-top: 32px; padding: 0; overflow: hidden; border: 1px solid rgba(0,0,0,0.05);">
+        <div style="padding: 24px 32px; background: #f8fafc; border-bottom: 1px solid rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; display: flex; align-items: center; gap: 12px;">
+            <svg style="width:24px; height:24px; color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            Visual Link Sandbox
+          </h3>
+          <span class="badge low" style="font-size: 0.75rem; letter-spacing: 0.05em; background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.2);">SECURE ISOLATION ACTIVE</span>
+        </div>
+        
+        <div style="position: relative; background: #0f172a; min-height: 400px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+          <!-- Security Grid Overlay -->
+          <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 30px 30px; z-index: 1; pointer-events: none;"></div>
+          
+          <div id="sandbox-loader" style="position: absolute; inset: 0; background: #0f172a; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 1s ease;">
+             <div class="cyber-scan-ring" style="width: 60px; height: 60px;"></div>
+             <p style="color: #fff; font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.2em; margin-top: 16px;">GENERATING SECURE PREVIEW...</p>
+          </div>
+
+          <img src="{{ report.screenshot_url }}" 
+               alt="Safe Preview" 
+               style="width: 100%; height: auto; display: block; filter: brightness(0.9); transition: transform 0.5s ease;"
+               onload="document.getElementById('sandbox-loader').style.opacity = '0'; setTimeout(() => { document.getElementById('sandbox-loader').style.display='none'; }, 1000);"
+               class="sandbox-screenshot">
+
+          <!-- UI Corner Elements -->
+          <div style="position: absolute; top: 20px; left: 20px; color: rgba(255,255,255,0.3); font-family: var(--font-mono); font-size: 10px; z-index: 2;">CAM_01 // REMOTE_CAPTURE</div>
+          <div style="position: absolute; bottom: 20px; right: 20px; color: rgba(255,255,255,0.3); font-family: var(--font-mono); font-size: 10px; z-index: 2;">ENCRYPTED_TUNNEL::ACTIVE</div>
+        </div>
+        
+        <div style="padding: 24px 32px; background: rgba(0,0,0,0.02); display: flex; gap: 24px; align-items: center;">
+          <div style="flex: 1;">
+            <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">
+              <strong>Observer Logic:</strong> This is a server-side high-resolution snapshot. You are viewing the target content through a secure relay, ensuring your local browser remains untouched by any potentially malicious code on the target domain.
+            </p>
+          </div>
+          <a href="{{ report.original_url }}" target="_blank" class="btn btn-secondary" style="white-space: nowrap; border-color: rgba(239, 68, 68, 0.2); color: var(--danger);">
+            Proceed Anyway (Risk Alert)
+          </a>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Heuristics Table -->
+      <div class="card" style="margin-top: 48px;">
+        <h3 style="margin-bottom: 24px;">Detailed Security Checks</h3>
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead><tr><th>Security Check</th><th>Result</th></tr></thead>
+            <tbody>
+              {% for key, value in report.features.items %}
+                <tr>
+                  <td style="font-weight: 600; color: var(--text-muted); font-size: 0.85rem;">{{ key|upper }}</td>
+                  <td>
+                    {% if value == True %}<span class="badge high">POSITIVE</span>
+                    {% elif value == False %}<span class="badge low">NEGATIVE</span>
+                    {% else %}<span style="font-weight: 700; color: var(--primary);">{{ value }}</span>{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</section>
+
+<!-- SCRIPTS -->
+<script>
+  // Chart.js Theme Overrides for Light Mode
+  Chart.defaults.color = '#64748b';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  Chart.defaults.font.weight = '500';
+
+  // Animate Score Ring
+  document.addEventListener('DOMContentLoaded', () => {
+    const targetScore = {{ report.risk_score|default:0 }};
+    const ring = document.getElementById('verdict-ring');
+    const scoreText = document.getElementById('score-text');
+    let current = 0;
+    
+    const interval = setInterval(() => {
+      if (current >= targetScore) {
+        clearInterval(interval);
+      }
+      ring.style.setProperty('--score', current);
+      scoreText.innerText = Math.round(current);
+      current += targetScore / 50;
+    }, 20);
+  });
+
+  // RADAR CHART
+  const ctxRisk = document.getElementById('riskChart').getContext('2d');
+  new Chart(ctxRisk, {
+    type: 'radar',
+    data: {
+      labels: ['TLD Risk', 'Obfuscation', 'Social Eng', 'Heuristics', 'Network', 'Crypto'],
+      datasets: [{
+        data: [
+          ("{{ report.features.suspicious_tld }}" === "True") ? 90 : 20,
+          ("{{ report.features.is_shortener }}" === "True" || "{{ report.features.contains_at_symbol }}" === "True") ? 100 : 30,
+          Math.min({{ report.features.entropy|default:0 }} * 18, 100),
+          ("{{ report.features.external_form_targets }}" === "True") ? 85 : 15,
+          Math.min({{ report.features.http_redirect_count|default:0 }} * 20, 100),
+          40
+        ],
+        backgroundColor: 'rgba(136, 17, 17, 0.15)',
+        borderColor: '#881111',
+        pointBackgroundColor: '#881111',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      scales: {
+        r: {
+          angleLines: { color: 'rgba(0,0,0,0.05)' },
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { display: false },
+          pointLabels: { font: { size: 10, weight: '700' } }
+        }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  // DOUGHNUT CHART
+  let pos = 0; let neg = 0;
+  {% for key, value in report.features.items %}
+    {% if value == True %} pos++; {% else %} neg++; {% endif %}
+  {% endfor %}
+  
+  const ctxRatio = document.getElementById('ratioChart').getContext('2d');
+  new Chart(ctxRatio, {
+    type: 'doughnut',
+    data: {
+      labels: ['Verified Secure', 'Risk Markers'],
+      datasets: [{
+        data: [neg, pos],
+        backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(239, 68, 68, 0.8)'],
+        borderWidth: 0,
+        hoverOffset: 10
+      }]
+    },
+    options: {
+      cutout: '75%',
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { size: 11, weight: '700' } } }
+      }
+    }
+  });
+
+  function downloadPDF() {
+    const element = document.getElementById('report-content');
+    const header = document.querySelector('.pdf-only-header');
+    header.style.display = 'block';
+    
+    html2pdf().set({
+      margin: 0.5,
+      filename: 'ScamShield_Report_{{ report.id }}.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    }).from(element).save().then(() => {
+      header.style.display = 'none';
+    });
+  }
+</script>
+
+<style>
+  .pdf-only-header { display: none; }
+  .hide-on-pdf { display: inherit; }
+  @media print {
+    .hide-on-pdf { display: none !important; }
+  }
+</style>
+{% endblock %}

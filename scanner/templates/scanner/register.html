@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}ScamShield | Initialize Clearance{% endblock %}
+{% block content %}
+<section class="section" style="min-height: 80vh; display: flex; align-items: center;">
+  <div class="container hero-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;">
+    <div class="stagger-item stagger-1">
+      <div class="badge low" style="margin-bottom: 20px;">Operator onboarding</div>
+      <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; margin-bottom: 24px;">Join the Cyber <span style="color: var(--accent-emerald);">Vanguard</span></h1>
+      <p class="lead" style="margin-top: 24px;">
+        Register an operations account to unlock full access to our URL inspection, IP reverse DNS lookups, and deep threat intelligence scoring engine.
+      </p>
+      <div class="kpi-grid" style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div class="card" style="padding: 24px; background: #f8fafc; border: 1px solid rgba(0,0,0,0.03);">
+          <strong style="color: var(--accent-emerald); font-size: 1.4rem; display: block; font-family: var(--font-heading); margin-bottom: 4px;">Open Access</strong>
+          <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">100% free security tools</span>
+        </div>
+        <div class="card" style="padding: 24px; background: #f8fafc; border: 1px solid rgba(0,0,0,0.03);">
+          <strong style="color: var(--accent-emerald); font-size: 1.4rem; display: block; font-family: var(--font-heading); margin-bottom: 4px;">Instant Intel</strong>
+          <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Real-time analysis engine</span>
+        </div>
+      </div>
+    </div>
+    <div class="card stagger-item stagger-2" style="padding: 48px; position: relative; overflow: hidden;">
+      <div style="position: absolute; top:0; left:0; width:100%; height:4px; background: linear-gradient(to right, var(--accent-emerald), var(--primary)); opacity: 0.6;"></div>
+      <h2 style="margin-bottom: 32px; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em;">Create Account</h2>
+      
+      <form method="post" id="reg-form" style="display: flex; flex-direction: column; gap: 20px;">
+        {% csrf_token %}
+        <div class="django-form-wrapper">
+          {{ form.as_p }}
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; height: 56px; border-radius: 12px; font-size: 1.1rem; border-color: var(--accent-emerald); background: var(--accent-emerald); margin-top: 12px;">
+          Register Profile
+        </button>
+      </form>
+      
+      <div style="text-align: center; margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.05);">
+        <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">
+          Operator clearance established? <a href="{% url 'login' %}" style="color: var(--accent-emerald); font-weight: 700; text-decoration: none;">Authenticate here</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Form styling to handle Django's auto-generated as_p */
+  .django-form-wrapper p { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .django-form-wrapper label { 
+    color: var(--text-muted); 
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    letter-spacing: 0.1em; 
+    font-weight: 700;
+  }
+  .django-form-wrapper input { 
+    width: 100%; 
+    padding: 16px; 
+    border-radius: 10px; 
+    border: 1px solid rgba(0,0,0,0.08); 
+    background: #fff; 
+    color: var(--text-main); 
+    font-size: 0.95rem; 
+    font-family: var(--font-mono); 
+    outline: none; 
+    transition: all 0.3s ease; 
+  }
+  .django-form-wrapper input:focus { 
+    border-color: var(--accent-emerald); 
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1); 
+  }
+  .helptext { font-size: 0.75rem; color: var(--text-muted); display: block; line-height: 1.4; opacity: 0.8; }
+  ul.errorlist { color: var(--danger); font-size: 0.8rem; padding-left: 0; list-style: none; margin-bottom: 12px; font-weight: 600; }
+</style>
+{% endblock %}

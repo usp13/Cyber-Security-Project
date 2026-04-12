@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Share Your Experience | ScamShield{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px; margin: 0 auto; padding: 0 20px;">
+
+  <div class="stagger-item stagger-1" style="margin-bottom: 32px;">
+    <a href="{% url 'community_list' %}" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-muted); font-weight: 600; margin-bottom: 16px;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Back to Community
+    </a>
+    <h1 style="font-size: 2rem; margin-bottom: 4px;">Share Your Experience</h1>
+    <p style="color: var(--text-muted);">Help others stay safe. Your story could save someone from being scammed.</p>
+  </div>
+
+  <form method="post" class="stagger-item stagger-2">
+    {% csrf_token %}
+
+    <div class="card" style="padding: 32px; margin-bottom: 24px;">
+      <!-- Title -->
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" placeholder='e.g. "Got scammed by fake Amazon delivery SMS"' required>
+      </div>
+
+      <!-- Scam Type -->
+      <div class="form-group">
+        <label for="scam_type">Scam Type</label>
+        <select id="scam_type" name="scam_type" style="width: 100%; padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid rgba(0,0,0,0.08); background: #fff; font-size: 1rem; color: var(--text-main);">
+          {% for value, label in scam_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Scam Source -->
+      <div class="form-group">
+        <label for="scam_source">Scam Source <span style="font-weight: 400; color: var(--text-muted);">(optional — URL, phone number, or name)</span></label>
+        <input type="text" id="scam_source" name="scam_source" placeholder="e.g. https://fake-site.com or +91-98xxx">
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label for="description">Your Story</label>
+        <textarea id="description" name="description" rows="6" placeholder="Describe what happened, how you were targeted, and what you lost. The more detail, the more it helps others..." required style="resize: vertical;"></textarea>
+      </div>
+
+      <!-- Anonymous Toggle -->
+      <div style="display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: rgba(136,17,17,0.03); border-radius: 14px; border: 1px solid rgba(136,17,17,0.06);">
+        <label style="position: relative; width: 48px; height: 26px; display: block; margin: 0;">
+          <input type="checkbox" name="is_anonymous" style="opacity: 0; width: 0; height: 0; position: absolute;" id="anon-toggle">
+          <span style="position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 26px; transition: 0.3s;" id="anon-slider"></span>
+        </label>
+        <div>
+          <span style="font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.11 6.11m3.768 3.768l4.242 4.242m0 0L17.89 17.89"/></svg>
+            Post Anonymously
+          </span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Your username will be hidden from everyone</span>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 16px;">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+      Publish Your Story
+    </button>
+  </form>
+
+</div>
+
+<style>
+  #anon-slider::before {
+    content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px;
+    background: white; border-radius: 50%; transition: 0.3s;
+  }
+  #anon-toggle:checked + #anon-slider { background: var(--primary); }
+  #anon-toggle:checked + #anon-slider::before { transform: translateX(22px); }
+</style>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block title %}ScamShield | QR Artifact Decoding{% endblock %}
+{% block content %}
+<section class="section" style="min-height: 80vh; position: relative; overflow: hidden;">
+  <!-- Three.js 3D Semantic Background -->
+  <div id="semantic-canvas-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none;"></div>
+  <div class="container hero-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;">
+    <div class="stagger-item stagger-1">
+      <div class="badge suspicious" style="margin-bottom: 20px;">Visual Signal Processing</div>
+      <h1>Decode <span style="color: var(--warning);">QR Artifacts</span></h1>
+      <p class="lead" style="margin-top: 24px;">
+          Extract and analyze links embedded in physical or digital QR codes. Our system decodes the image and performs an immediate security analysis on the hidden URL.
+      </p>
+    </div>
+
+    <div class="card stagger-item stagger-2" style="position:relative; overflow: hidden;">
+      <!-- Scan Line Effect -->
+      <div class="scan-line" style="position: absolute; top:0; left:0; width:100%; height:2px; background: linear-gradient(to right, transparent, var(--warning), transparent); z-index: 5; animation: scanSweep 3s linear infinite; display: none;" id="scan-line-vial"></div>
+      
+      <form id="qrForm" method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 24px;">
+        {% csrf_token %}
+        <input type="hidden" name="qr_text" id="qr_text">
+        
+        <div id="reader" style="width: 100%; display: none; border-radius: 12px; overflow: hidden; border: 2px solid rgba(251, 191, 36, 0.2);"></div>
+        
+        <button type="button" id="start-camera-btn" class="btn btn-secondary" style="width: 100%; height: 56px; border-radius: 12px;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg" style="margin-right: 10px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          Initialize Live Scan
+        </button>
+        
+        <div style="display: flex; align-items: center; justify-content: center; gap: 16px;">
+            <div style="flex:1; height:1px; background:rgba(0,0,0,0.05);"></div>
+            <p style="text-align: center; color: var(--text-muted); margin: 0; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;">or upload image</p>
+            <div style="flex:1; height:1px; background:rgba(0,0,0,0.05);"></div>
+        </div>
+        
+        <input type="file" name="qr_image" accept="image/*" class="form-control" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); background: #f8fafc;">
+        <button type="submit" class="btn btn-primary" style="width: 100%; height: 56px; border-radius: 12px;">Analyze Static Image</button>
+      </form>
+    </div>
+  </div>
+
+  {% if decoded_text %}
+  <div class="container stagger-item stagger-3" style="margin-top: 60px;">
+    <div class="card" style="border-left: 4px solid var(--warning);">
+      <h3 style="margin-bottom: 20px; color: var(--warning); display: flex; align-items: center; gap: 10px;">
+        <svg style="width:24px; height:24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Decoded Matrix Result
+      </h3>
+      <div style="background: #f8fafc; padding: 24px; border-radius: 8px; margin-top: 10px;">
+        <code style="word-break: break-all; font-size: 1.1rem; color: var(--primary); font-family: var(--font-mono);">{{ decoded_text }}</code>
+      </div>
+      <div style="margin-top: 24px;">
+          <a href="{% url 'home' %}?url={{ decoded_text|urlencode }}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+            Run Deep Analysis on Link
+            <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+  <!-- Three.js Neural Plexus Script -->
+  <script>
+  (function() {
+    const container = document.getElementById('semantic-canvas-container');
+    if (!container) return;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xffffff, 0.02);
+
+    const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const count = 100;
+    const r = 20;
+    
+    // Nodes / Points
+    const pMaterial = new THREE.PointsMaterial({
+      color: 0x881111, // AU Maroon
+      size: 0.15,
+      transparent: true,
+      opacity: 0.4
+    });
+
+    const pGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    const velocities = [];
+
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * r;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * r;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * r;
+      
+      velocities.push(new THREE.Vector3(
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02
+      ));
+    }
+
+    pGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const points = new THREE.Points(pGeometry, pMaterial);
+    group.add(points);
+
+    // Connections / Lines
+    const lMaterial = new THREE.LineBasicMaterial({
+      color: 0x0f172a,
+      transparent: true,
+      opacity: 0.05 // Even more subtle
+    });
+
+    const lGeometry = new THREE.BufferGeometry();
+    const linePositions = new Float32Array(count * count * 3);
+    lGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+    const lines = new THREE.LineSegments(lGeometry, lMaterial);
+    group.add(lines);
+
+    camera.position.z = 10;
+
+    let mouseX = 0, mouseY = 0;
+    document.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX - window.innerWidth / 2) / 100;
+      mouseY = (e.clientY - window.innerHeight / 2) / 100;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      const pos = points.geometry.attributes.position.array;
+      let linePosIdx = 0;
+      let connectedCount = 0;
+
+      for (let i = 0; i < count; i++) {
+        // Move points
+        pos[i * 3] += velocities[i].x;
+        pos[i * 3 + 1] += velocities[i].y;
+        pos[i * 3 + 2] += velocities[i].z;
+
+        // Bounce
+        if (Math.abs(pos[i * 3]) > 10) velocities[i].x *= -1;
+        if (Math.abs(pos[i * 3 + 1]) > 8) velocities[i].y *= -1;
+        if (Math.abs(pos[i * 3 + 2]) > 8) velocities[i].z *= -1;
+
+        // Lines
+        for (let j = i + 1; j < count; j++) {
+          const dx = pos[i * 3] - pos[j * 3];
+          const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
+          const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+          if (dist < 3.5) {
+            linePositions[linePosIdx++] = pos[i * 3];
+            linePositions[linePosIdx++] = pos[i * 3 + 1];
+            linePositions[linePosIdx++] = pos[i * 3 + 2];
+
+            linePositions[linePosIdx++] = pos[j * 3];
+            linePositions[linePosIdx++] = pos[j * 3 + 1];
+            linePositions[linePosIdx++] = pos[j * 3 + 2];
+            
+            connectedCount++;
+          }
+        }
+      }
+
+      points.geometry.attributes.position.needsUpdate = true;
+      lines.geometry.attributes.position.needsUpdate = true;
+      lines.geometry.setDrawRange(0, connectedCount * 2);
+
+      group.rotation.y += 0.001;
+      
+      // Camera parallax
+      camera.position.x += (mouseX - camera.position.x) * 0.05;
+      camera.position.y += (-mouseY - camera.position.y) * 0.05;
+      camera.lookAt(scene.position);
+
+      renderer.render(scene, camera);
+    }
+    
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+  })();
+  </script>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const startBtn = document.getElementById('start-camera-btn');
+      const readerDiv = document.getElementById('reader');
+      const qrTextHidden = document.getElementById('qr_text');
+      const form = document.getElementById('qrForm');
+      const scanLine = document.getElementById('scan-line-vial');
+      
+      startBtn.addEventListener('click', function() {
+          readerDiv.style.display = 'block';
+          scanLine.style.display = 'block';
+          this.style.display = 'none';
+          
+          const html5QrcodeScanner = new Html5QrcodeScanner(
+              "reader", 
+              { fps: 15, qrbox: {width: 250, height: 250} }, 
+              false
+          );
+          
+          html5QrcodeScanner.render(function(decodedText, decodedResult) {
+              qrTextHidden.value = decodedText;
+              html5QrcodeScanner.clear().then(_ => {
+                  form.submit();
+              });
+          }, function(error) {});
+      });
+  });
+</script>
+
+<style>
+  #reader button {
+      background: var(--bg-main);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: all 0.3s ease;
+  }
+  #reader button:hover { background: var(--primary); color: #fff; }
+  #reader select {
+      padding: 12px;
+      margin-bottom: 12px;
+      width: 100%;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 8px;
+      outline: none;
+  }
+  @keyframes scanSweep {
+      0% { top: 0; }
+      100% { top: 100%; }
+  }
+</style>
+{% endblock %}

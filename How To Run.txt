@@ -1,0 +1,26 @@
+How to Run the ScamShield Django Project:
+
+1. Open PowerShell or Command Prompt.
+
+2. Navigate to the project directory:
+   cd "c:\Users\91886\Downloads\scamshield_django (2)\scamshield_django"
+
+3. Create the virtual environment (using 'py' bypasses the Microsoft Store prompt):
+   py -m venv venv
+
+4. Activate the virtual environment:
+   .\venv\Scripts\activate
+
+5. Install the required project dependencies:
+   pip install -r requirements.txt
+
+6. Set up the local database (only needed the first time or when models change):
+   python manage.py migrate
+
+7. Start the development server:
+   python manage.py runserver
+
+8. Once started, open your web browser and go to:
+   http://127.0.0.1:8000/
+
+Note: To stop the server later, click inside your terminal and press Ctrl + C.

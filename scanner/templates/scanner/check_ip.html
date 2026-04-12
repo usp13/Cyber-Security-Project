@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+{% block title %}ScamShield | IP Investigation{% endblock %}
+{% block content %}
+<!-- Include Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<section class="section" style="min-height: 85vh; position: relative; overflow: hidden; display: flex; align-items: center; background: #fff;">
+  <!-- Three.js 3D Globe Background -->
+  <div id="globe-canvas-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.8;"></div>
+
+  <div class="container hero-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; position: relative; z-index: 1;" id="input-section">
+    <div class="stagger-item stagger-1">
+      <div class="badge low" style="margin-bottom: 24px; border-color: var(--primary); color: var(--primary);">IP Address Checker</div>
+      <h1 class="section-title" style="text-align: left; font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; margin-bottom: 24px;">Check <span style="color: var(--primary);">IP Address</span></h1>
+      <p class="lead" style="margin-top: 0; color: #4b5563; font-weight: 500;">
+          Verify IP addresses, trace connections, and analyze network safety across the globe.
+      </p>
+    </div>
+    
+    <div class="card stagger-item stagger-2" style="padding: 48px; border-radius: 32px; border: 1px solid #eee; background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); position: relative; overflow: hidden;">
+      <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(99,102,241,0.1), transparent 70%); border-radius: 50%; opacity: 0.5;"></div>
+      
+      <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; align-items: stretch;" id="ip-grid">
+        <form method="post" id="ip-form" style="position: relative; z-index: 1;">
+          {% csrf_token %}
+          <div class="form-group" style="margin-bottom: 32px; position: relative;">
+            <label for="id_ip_address" style="color: var(--primary); font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 12px;">Target IP Address</label>
+            <div style="position: relative;">
+               {{ form.ip_address }}
+               <svg style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: #cbd5e1;" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </div>
+          </div>
+          
+          <div style="display: grid; gap: 12px; margin-bottom: 40px;">
+            <p class="muted" style="margin: 0; font-size: 0.85rem; font-weight: 600; color: #999;">Investigation Proxies (Click to auto-fill):</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+              <span class="badge low" style="cursor: pointer; font-size: 0.75rem; transition: all 0.3s;" onclick="document.getElementById('id_ip_address').value='8.8.8.8'; document.getElementById('id_ip_address').focus();">Google DNS</span>
+              <span class="badge suspicious" style="cursor: pointer; font-size: 0.75rem; transition: all 0.3s;" onclick="document.getElementById('id_ip_address').value='45.33.32.156'; document.getElementById('id_ip_address').focus();">Node ID: 45.33</span>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" type="submit" style="width: 100%; padding: 22px; font-size: 1.2rem; border-radius: 16px; font-weight: 800; background: var(--primary); box-shadow: 0 15px 30px var(--primary-glow);">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg" style="margin-right: 12px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+            Track IP Address
+          </button>
+        </form>
+        
+        <div style="background: #f8fafc; border-radius: 24px; padding: 24px; border: 1px solid rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1;">
+          <div style="width: 100%; height: 140px; background: #0f172a; border-radius: 16px; margin-bottom: 20px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);">
+             <div class="radar-sweep" id="radar-sweep" style="position: absolute; inset: 0; background: conic-gradient(from 0deg, transparent 60%, rgba(16,185,129,0.5) 100%); animation: spin 3s linear infinite; border-radius: 50%;"></div>
+             <div style="position: absolute; width: 100%; height: 100%; border: 1px solid rgba(16,185,129,0.1); border-radius: 50%; box-sizing: border-box;"></div>
+             <div style="position: absolute; width: 66%; height: 66%; border: 1px solid rgba(16,185,129,0.2); border-radius: 50%;"></div>
+             <div style="position: absolute; width: 33%; height: 33%; border: 1px solid rgba(16,185,129,0.3); border-radius: 50%;"></div>
+             <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 15px #10b981; z-index: 1; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+            <div style="background: rgba(16,185,129,0.1); padding: 8px; border-radius: 6px; text-align: center; border: 1px solid rgba(16,185,129,0.2);">
+              <div style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 800; margin-bottom: 2px;">Data Sources</div>
+              <div style="font-size: 0.9rem; color: var(--success); font-weight: 700; font-family: var(--font-mono);">+14 INTEL</div>
+            </div>
+            <div style="background: rgba(99,102,241,0.05); padding: 8px; border-radius: 6px; text-align: center; border: 1px solid rgba(99,102,241,0.1);">
+              <div style="font-size: 0.65rem; color: #64748b; text-transform: uppercase; font-weight: 800; margin-bottom: 2px;">Resolution</div>
+              <div style="font-size: 0.9rem; color: var(--primary); font-weight: 700; font-family: var(--font-mono);">GPS/ISP</div>
+            </div>
+          </div>
+          <div style="text-align: center; font-family: var(--font-mono); font-size: 0.75rem; color: #64748b; font-weight: 700;" id="radar-status">AWAITING TARGET COORDINATES</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Three.js Aesthetic Data Wave Background -->
+<script>
+  (function() {
+    const container = document.getElementById('globe-canvas-container');
+    if (!container) return;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0xffffff, 0.025); // Lighter fog so points don't wash out
+
+    const camera = new THREE.PerspectiveCamera(60, container.offsetWidth / container.offsetHeight, 1, 500);
+    camera.position.set(0, 10, 20); // Look down at the wave
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(container.offsetWidth, container.offsetHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const SEPARATION = 1.5, AMOUNTX = 50, AMOUNTY = 50;
+    const numParticles = AMOUNTX * AMOUNTY;
+    
+    // Geometry
+    const positions = new Float32Array(numParticles * 3);
+    const geometry = new THREE.BufferGeometry();
+    
+    let i = 0;
+    for ( let ix = 0; ix < AMOUNTX; ix ++ ) {
+        for ( let iy = 0; iy < AMOUNTY; iy ++ ) {
+            positions[ i ] = ix * SEPARATION - ( ( AMOUNTX * SEPARATION ) / 2 );
+            positions[ i + 1 ] = 0;
+            positions[ i + 2 ] = iy * SEPARATION - ( ( AMOUNTY * SEPARATION ) / 2 );
+            i += 3;
+        }
+    }
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    // Custom glowing particle utilizing built in canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 16; canvas.height = 16;
+    const context = canvas.getContext('2d');
+    context.beginPath();
+    context.arc(8, 8, 8, 0, Math.PI * 2, false);
+    context.fillStyle = '#4a0000'; // Slight dark maroon
+    context.fill();
+    const texture = new THREE.CanvasTexture(canvas);
+
+    const material = new THREE.PointsMaterial({
+        color: 0x4a0000,
+        size: 0.35, 
+        map: texture,
+        transparent: true,
+        opacity: 0.7,
+        alphaTest: 0.1
+    });
+
+    const particles = new THREE.Points(geometry, material);
+    particles.position.y = -5; // Move the wave downwards slightly
+    scene.add(particles);
+
+    let count = 0;
+    let mouseX = 0;
+    
+    document.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX - window.innerWidth / 2) / 30;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const positions = particles.geometry.attributes.position.array;
+      let i = 0;
+      for ( let ix = 0; ix < AMOUNTX; ix ++ ) {
+          for ( let iy = 0; iy < AMOUNTY; iy ++ ) {
+              // Create the flowing sine wave topography
+              positions[ i + 1 ] = ( Math.sin( ( ix + count ) * 0.3 ) * 2 ) + ( Math.sin( ( iy + count ) * 0.3 ) * 2 );
+              i += 3;
+          }
+      }
+      particles.geometry.attributes.position.needsUpdate = true;
+
+      // Gentle camera sway based on mouse
+      camera.position.x += ( mouseX - camera.position.x ) * 0.05;
+      camera.lookAt( scene.position );
+
+      renderer.render(scene, camera);
+      count += 0.03; // Wave speed
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = container.offsetWidth / container.offsetHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.offsetWidth, container.offsetHeight);
+    });
+  })();
+</script>
+</section>
+
+  {% if result %}
+    <div class="container" style="margin-top: 60px;" id="result-wrapper">
+      <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 32px;" class="stagger-item stagger-3">
+          <h2 style="font-size: 2rem;">IP Scan <span style="color: var(--primary);">Results</span></h2>
+          <button onclick="downloadPDF()" class="btn btn-secondary">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="margin-right: 6px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Export Logs
+          </button>
+      </div>
+
+      <div id="report-content" class="stagger-item stagger-4">
+        <div class="card" style="padding: 48px;">
+          <div class="pdf-only-header" style="display: none; text-align: center; margin-bottom: 40px;">
+              <h1 style="color: var(--text-main); font-family: var(--font-heading); font-size: 28px;">SCAMSHIELD | <span style="color: var(--primary);">IP SCAN</span></h1>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 48px; align-items: start;">
+              <div>
+                  <h3 style="margin-bottom: 24px;">Network Details</h3>
+                  <div style="background: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.03);">
+                    <pre style="margin: 0; color: var(--text-main); font-size: 0.95rem; line-height: 1.6; font-family: var(--font-mono); white-space: pre-wrap;">{{ result }}</pre>
+                  </div>
+              </div>
+
+              <div style="text-align:center;">
+                  <p style="font-weight: 700; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px;">IP Analysis Graph</p>
+                  <div style="height: 300px;">
+                    <canvas id="ipChart"></canvas>
+                  </div>
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</section>
+
+<script>
+  {% if result %}
+  Chart.defaults.color = '#64748b';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+
+  const ctx = document.getElementById('ipChart').getContext('2d');
+  new Chart(ctx, {
+      type: 'polarArea',
+      data: {
+          labels: ['Reliability', 'Range', 'Depth', 'Protocol'],
+          datasets: [{
+              data: [95, 75, 45, 100],
+              backgroundColor: [
+                  'rgba(99, 102, 241, 0.7)',
+                  'rgba(6, 182, 212, 0.7)',
+                  'rgba(239, 68, 68, 0.7)',
+                  'rgba(168, 85, 247, 0.7)'
+              ],
+              borderWidth: 0
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+              r: {
+                  grid: { color: 'rgba(0,0,0,0.03)' },
+                  ticks: { display: false }
+              }
+          },
+          plugins: {
+              legend: { position: 'bottom', labels: { boxWidth: 12, padding: 20, font: { weight: '700' } } }
+          }
+      }
+  });
+
+  function downloadPDF() {
+      const header = document.querySelector('.pdf-only-header');
+      header.style.display = 'block';
+      const element = document.getElementById('report-content');
+      html2pdf().set({
+          margin: 0.5,
+          filename: 'ScamShield_NodeAudit.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      }).from(element).save().then(() => {
+          header.style.display = 'none';
+      });
+  }
+  {% endif %}
+</script>
+
+<style>
+/* Style override for input */
+#id_ip_address {
+  width: 100%; padding: 18px 24px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08);
+  background: #fff; color: var(--text-main); font-size: 1.1rem;
+  font-family: var(--font-mono); margin-top: 8px;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+}
+#id_ip_address:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(136, 17, 17, 0.1); }
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 0.7; } }
+@keyframes radarBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+@media (max-width: 768px) {
+  #ip-grid { grid-template-columns: 1fr !important; }
+}
+</style>
+<script>
+  if(document.getElementById('id_ip_address')){
+     const input = document.getElementById('id_ip_address');
+     const status = document.getElementById('radar-status');
+     const sweep = document.getElementById('radar-sweep');
+     input.addEventListener('input', () => {
+         if(input.value.length > 5){
+             status.innerText = "LOCKING ON TARGET: " + input.value;
+             status.style.color = 'var(--primary)';
+             sweep.style.background = 'conic-gradient(from 0deg, transparent 60%, rgba(136,17,17,0.7) 100%)';
+         } else {
+             status.innerText = "AWAITING TARGET COORDINATES";
+             status.style.color = '#64748b';
+             sweep.style.background = 'conic-gradient(from 0deg, transparent 60%, rgba(16,185,129,0.5) 100%)';
+         }
+     });
+  }
+</script>
+{% endblock %}
